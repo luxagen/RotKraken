@@ -1,0 +1,48 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use DateTime qw(now);
+
+foreach my $file (@ARGV) {
+    my $hash = &hash($file);
+    &save($file, $hash);
+    &read($file, $hash);
+}
+
+##########
+# MD5-hash a file and return the resulting hash
+sub hash {
+    my ($file) = @_;
+    my $hash = `md5sum $file | cut -d ' ' -f 1`;
+    chomp $hash;
+    return $hash;
+}
+
+##########
+# Store MD5 hash in metadata
+sub save {
+    my ($file, $hash) = @_;
+    my $time = DateTime->now;
+    system("setfattr --restore=- <<EOF
+# file: $file
+user.hash.md5=\"$hash\"
+user.hash.vtime=\"$time\"
+EOF
+");
+}
+
+##########
+# Read back a hash from a file and compare
+sub read {
+    my ($file, $hash) = @_;
+    my $oldhash = `getfattr -d "$file" | grep user.hash.md5 | sed 's/user.hash.md5="//' | sed 's/"\$//'`;
+    chomp $oldhash;
+    print "$oldhash -> $hash\n";
+    print "yay\n" if $oldhash eq $hash;
+    print "nay\n" if $oldhash ne $hash;
+    return;
+}
+
+##########
