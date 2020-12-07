@@ -19,12 +19,14 @@ use DateTime qw(now);
 my $mode = shift;
 my $file = shift;
 
-if (defined $mode && $mode =~ m/^-[lnfvaxie]$/) {
-    &hash_if_none_present($file) if ($mode =~ m/-n/);
-} else {
+if (not defined $mode && $mode =~ m/^-[lnfvaxie]$/) {
     print "Incorrect usage!\n";
     exit 1;
 }
+
+&hash_if_none_present($file) if ($mode =~ m/-n/);
+&create_new_hash($file) if ($mode =~ m/-f/);
+&kill_meta($file) if ($mode =~ m/-x/);
 
 ################################################################################
 # Main program loop.
@@ -42,6 +44,16 @@ sub hash_if_none_present {
         print "Creating a new hash for $file\n";
         &create_new_hash($file);
     }
+}
+
+################################################################################
+# Tests for a hash, and calls 'create_new_hash' if there isn't one.
+sub kill_meta {
+    my ($file) = @_;
+    system("setfattr --remove=user.hash.md5   '$file' >/dev/null 2>&1");
+    system("setfattr --remove=user.hash.htime '$file' >/dev/null 2>&1");
+    system("setfattr --remove=user.hash.state '$file' >/dev/null 2>&1");
+    system("setfattr --remove=user.hash.vtime '$file' >/dev/null 2>&1");
 }
 
 ################################################################################
