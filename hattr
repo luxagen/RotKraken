@@ -1,48 +1,90 @@
 #!/usr/bin/env perl
 
+################################################################################
+# Mode options
+# -l    Default: Print some status line
+# -n    Write new metadata where it doesn't exist
+# -f    Write metadata regardless
+# -v    Verify metadata where it exists
+# -a    Combination -n & -v
+# -x    Delete all metadata.
+# -i    (import)
+# -e    (export)
+
 use strict;
 use warnings;
 
 use DateTime qw(now);
 
-foreach my $file (@ARGV) {
-    my $hash = &hash($file);
-    &save($file, $hash);
-    &read($file, $hash);
+my $mode = shift;
+my $file = shift;
+
+if (defined $mode && $mode =~ m/^-[lnfvaxie]$/) {
+    &hash_if_none_present($file) if ($mode =~ m/-n/);
+} else {
+    print "Incorrect usage!\n";
+    exit 1;
 }
 
-##########
-# MD5-hash a file and return the resulting hash
-sub hash {
+################################################################################
+# Main program loop.
+#foreach my $file (@ARGV) {
+#}
+
+################################################################################
+# Tests for a hash, and calls 'create_new_hash' if there isn't one.
+sub hash_if_none_present {
     my ($file) = @_;
-    my $hash = `md5sum $file | cut -d ' ' -f 1`;
-    chomp $hash;
-    return $hash;
+    my $existing_hash = &read_existing_hash($file);
+    if (defined $existing_hash && $existing_hash ne ''){
+        print "$file already has a hash: $existing_hash -- Skipping\n";
+    } else {
+        print "Creating a new hash for $file\n";
+        &create_new_hash($file);
+    }
 }
 
-##########
-# Store MD5 hash in metadata
-sub save {
-    my ($file, $hash) = @_;
+################################################################################
+# Hash the file and write the hash+htime to the file metadata.
+sub create_new_hash {
+    my ($file) = @_;
+    my $hash = &hash_file($file);
     my $time = DateTime->now;
     system("setfattr --restore=- <<EOF
 # file: $file
 user.hash.md5=\"$hash\"
-user.hash.vtime=\"$time\"
+user.hash.htime=\"$time\"
 EOF
 ");
 }
+#user.hash.vtime=\"$time\"
 
-##########
+
+################################################################################
 # Read back a hash from a file and compare
-sub read {
-    my ($file, $hash) = @_;
-    my $oldhash = `getfattr -d "$file" | grep user.hash.md5 | sed 's/user.hash.md5="//' | sed 's/"\$//'`;
-    chomp $oldhash;
-    print "$oldhash -> $hash\n";
-    print "yay\n" if $oldhash eq $hash;
-    print "nay\n" if $oldhash ne $hash;
-    return;
+sub verify_hash {
+    my ($file) = @_;
+    my $new_hash = &hash_file($file);
+    my $saved_hash = &read_existing_file($file);
+    return ($new_hash eq $saved_hash);
 }
 
-##########
+################################################################################
+# Hash the file and return the resulting hash
+sub hash_file {
+    my ($file) = @_;
+    my $hash = `md5sum '$file' | cut -d ' ' -f 1`;
+    chomp $hash;
+    return $hash;
+}
+
+################################################################################
+# Read back a hash from a file.
+sub read_existing_hash {
+    my ($file) = @_;
+    my $hash = `getfattr -d '$file' | grep user.hash.md5 | sed 's/user.hash.md5="//' | sed 's/"\$//'`;
+    chomp $hash;
+    return $hash;
+}
+
+################################################################################
