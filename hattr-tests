@@ -102,4 +102,4 @@ sub first_time_hashing() {
 
 my $fs = shift;
 
-&first_time_hashing($fs.'/1.testfile');
+&first_time_hashing($fs.'/1 - name with a space.testfile');
