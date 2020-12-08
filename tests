@@ -3,7 +3,9 @@
 use strict;
 use warnings;
 
-my $file = shift;
+use Test::More qw(no_plan); # for the is() and isnt() functions
+use FindBin;
+my $testee = "$FindBin::Bin/hattr";
 
 sub get_meta() {
     my ($file) = @_;
@@ -12,15 +14,92 @@ sub get_meta() {
 
     open my $fh, '<', \$dump;
 
-    my $fields = {};
+    my %fields;
     while (<$fh>) {
         next unless m/^[\s]*user.hash.(md5|htime|state|vtime)="(.*)"[\s]*$/;
-        $fields->{$1} = $2;
+        $fields{$1} = $2;
     }
 
-    return $fields;
+    return %fields;
 }
 
-use Data::Dumper;
-print Dumper &get_meta($file);
+# TODO:
+# -l    Default: Print some status line
+# -v    Verify metadata where it exists
+# -a    Combination -n & -v
+# -x    Delete all metadata. - THIS NEEDS RETESTING WITH ALL 4 KEYS!
+# -i    (import)
+# -e    (export)
 
+use Data::Dumper;
+
+sub first_time_hashing() {
+	my ($file) = @_;
+
+	############################################################################
+	## Constants/variables
+
+	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
+	my $v2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	my $v3 = '0123456789';
+
+	my $h1 = 'e302f9ecd2d189fa80aac1c3392e9b9c';
+	my $h2 = '1d238b74da513ce35e129e7dc07060ad';
+	my $h3 = '3749f52bb326ae96782b42dc0a97b4c1';
+
+	my %meta;
+	my $last_htime;
+
+	############################################################################
+	## Test body
+
+    system("echo '$v1' > '$file'");  # Write content
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,0);
+
+	system("'$testee' -n '$file'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+
+	$last_htime = $meta{htime};
+
+    system("echo '$v2' > '$file'"); # Change content
+
+	sleep(1);
+	system("'$testee' -f '$file'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h2);
+	&ok($meta{htime} gt $last_htime); # TODO FORMAT CHECK
+
+	$last_htime = $meta{htime};
+
+	sleep(1);
+	system("'$testee' -x '$file'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,0);
+
+    system("echo '$v3' > '$file'"); # Change content
+
+	sleep(1);
+	system("'$testee' -f '$file'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h3);
+	&ok($meta{htime} gt $last_htime); # TODO FORMAT CHECK
+
+	$last_htime = $meta{htime};
+
+    system("rm '$file'");
+}
+
+my $fs = shift;
+
+&first_time_hashing($fs.'/1.testfile');
