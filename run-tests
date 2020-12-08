@@ -1,0 +1,4 @@
+#!/bin/bash
+mkdir test-run
+./tests test-run
+rm -rf test-run
