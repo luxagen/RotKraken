@@ -33,7 +33,7 @@ sub get_meta() {
 
 use Data::Dumper;
 
-sub first_time_hashing() {
+sub initial_hashing() {
 	my ($file) = @_;
 
 	############################################################################
@@ -102,4 +102,4 @@ sub first_time_hashing() {
 
 my $fs = shift;
 
-&first_time_hashing($fs.'/1 - name with a space.testfile');
+&initial_hashing($fs.'/1 - name with a space.testfile');
