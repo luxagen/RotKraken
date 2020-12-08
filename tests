@@ -1,0 +1,26 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+my $file = shift;
+
+sub get_meta() {
+    my ($file) = @_;
+
+    my $dump=`getfattr -d '$file'`;
+
+    open my $fh, '<', \$dump;
+
+    my $fields = {};
+    while (<$fh>) {
+        next unless m/^[\s]*user.hash.(md5|htime|state|vtime)="(.*)"[\s]*$/;
+        $fields->{$1} = $2;
+    }
+
+    return $fields;
+}
+
+use Data::Dumper;
+print Dumper &get_meta($file);
+
