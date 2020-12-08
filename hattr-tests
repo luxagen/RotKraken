@@ -16,7 +16,7 @@ sub get_meta() {
 
     my %fields;
     while (<$fh>) {
-        next unless m/^[\s]*user.hash.(md5|htime|state|vtime)="(.*)"[\s]*$/;
+        next unless m/^[\s]*user.hattr.(md5|htime|state|vtime)="(.*)"[\s]*$/;
         $fields{$1} = $2;
     }
 
