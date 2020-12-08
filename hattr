@@ -50,10 +50,10 @@ sub hash_if_none_present {
 # Tests for a hash, and calls 'create_new_hash' if there isn't one.
 sub kill_meta {
     my ($file) = @_;
-    system("setfattr --remove=user.hash.md5   '$file' >/dev/null 2>&1");
-    system("setfattr --remove=user.hash.htime '$file' >/dev/null 2>&1");
-    system("setfattr --remove=user.hash.state '$file' >/dev/null 2>&1");
-    system("setfattr --remove=user.hash.vtime '$file' >/dev/null 2>&1");
+    system("setfattr --remove=user.hattr.md5   '$file' >/dev/null 2>&1");
+    system("setfattr --remove=user.hattr.htime '$file' >/dev/null 2>&1");
+    system("setfattr --remove=user.hattr.state '$file' >/dev/null 2>&1");
+    system("setfattr --remove=user.hattr.vtime '$file' >/dev/null 2>&1");
 }
 
 ################################################################################
@@ -64,12 +64,12 @@ sub create_new_hash {
     my $time = DateTime->now;
     system("setfattr --restore=- <<EOF
 # file: $file
-user.hash.md5=\"$hash\"
-user.hash.htime=\"$time\"
+user.hattr.md5=\"$hash\"
+user.hattr.htime=\"$time\"
 EOF
 ");
 }
-#user.hash.vtime=\"$time\"
+#user.hattr.vtime=\"$time\"
 
 
 ################################################################################
@@ -94,7 +94,7 @@ sub hash_file {
 # Read back a hash from a file.
 sub read_existing_hash {
     my ($file) = @_;
-    my $hash = `getfattr -d '$file' | grep user.hash.md5 | sed 's/user.hash.md5="//' | sed 's/"\$//'`;
+    my $hash = `getfattr -d '$file' | grep user.hattr.md5 | sed 's/user.hattr.md5="//' | sed 's/"\$//'`;
     chomp $hash;
     return $hash;
 }
