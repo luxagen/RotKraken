@@ -35,7 +35,7 @@ my $fs = shift;
 
 &test_nfx($fs.'/1 - name with a space.testfile');
 &test_nv ($fs.'/2 - name with a space.testfile');
-#&test_a  ($fs.'/3 - name with a space.testfile');
+&test_a  ($fs.'/3 - name with a space.testfile');
 #&test_ie ($fs.'/4 - name with a space.testfile');
 
 sub test_nfx() {
