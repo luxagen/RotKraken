@@ -24,9 +24,14 @@ if (not defined $mode && $mode =~ m/^-[lnfvaxie]$/) {
     exit 1;
 }
 
-&hash_if_none_present($file) if ($mode =~ m/-n/);
-&create_new_hash($file) if ($mode =~ m/-f/);
-&kill_meta($file) if ($mode =~ m/-x/);
+#&mode_list  ($file) if ($mode =~ m/-l/);
+&mode_new   ($file) if ($mode =~ m/-n/);
+&mode_force ($file) if ($mode =~ m/-f/);
+&mode_verify($file) if ($mode =~ m/-v/);
+#&mode_all   ($file) if ($mode =~ m/-a/);
+&mode_remove($file) if ($mode =~ m/-x/);
+#&mode_import($file) if ($mode =~ m/-i/);
+#&mode_export($file) if ($mode =~ m/-e/);
 
 ################################################################################
 # Main program loop.
@@ -34,8 +39,8 @@ if (not defined $mode && $mode =~ m/^-[lnfvaxie]$/) {
 #}
 
 ################################################################################
-# Tests for a hash, and calls 'create_new_hash' if there isn't one.
-sub hash_if_none_present {
+# Initial-hash the file if it hasn't already been done
+sub mode_new {
     my ($file) = @_;
     my $existing_hash = &read_existing_hash($file);
     if (defined $existing_hash && $existing_hash ne ''){
@@ -47,14 +52,50 @@ sub hash_if_none_present {
 }
 
 ################################################################################
-# Tests for a hash, and calls 'create_new_hash' if there isn't one.
-sub kill_meta {
+# Initial-hash the file indiscriminately
+sub mode_force {
+	return &create_new_hash($file);
+}
+
+################################################################################
+# Verify the file if it's been initial-hashed
+sub mode_verify {
+	my ($file) = @_;
+
+	my $stored = &read_existing_hash($file);
+
+	return if ($stored eq ''); # No existing hash - skip file
+
+	if (&verify_hash($file, $stored)) {
+		my $time = DateTime->now;
+		system("setfattr --restore=- <<EOF
+# file: $file
+user.rk.state=\"V\"
+user.rk.vtime=\"$time\"
+EOF
+			");
+	}
+	else {
+		system("setfattr --restore=- <<EOF
+# file: $file
+user.rk.state=\"X\"
+EOF
+");
+	}
+}
+
+################################################################################
+# Remove all metadata from the file
+sub mode_remove {
     my ($file) = @_;
     system("setfattr --remove=user.rk.md5   '$file' >/dev/null 2>&1");
     system("setfattr --remove=user.rk.htime '$file' >/dev/null 2>&1");
     system("setfattr --remove=user.rk.state '$file' >/dev/null 2>&1");
     system("setfattr --remove=user.rk.vtime '$file' >/dev/null 2>&1");
 }
+
+################################################################################
+# HELPERS
 
 ################################################################################
 # Hash the file and write the hash+htime to the file metadata.
@@ -69,16 +110,12 @@ user.rk.htime=\"$time\"
 EOF
 ");
 }
-#user.rk.vtime=\"$time\"
-
 
 ################################################################################
 # Read back a hash from a file and compare
 sub verify_hash {
-    my ($file) = @_;
-    my $new_hash = &hash_file($file);
-    my $saved_hash = &read_existing_file($file);
-    return ($new_hash eq $saved_hash);
+    my ($file, $stored) = @_;
+    return &hash_file($file) eq $stored;
 }
 
 ################################################################################
