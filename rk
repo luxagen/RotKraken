@@ -42,19 +42,20 @@ if (not defined $mode && $mode =~ m/^-[lnfvaxie]$/) {
 # Initial-hash the file if it hasn't already been done
 sub mode_new {
     my ($file) = @_;
-    my $existing_hash = &read_existing_hash($file);
-    if (defined $existing_hash && $existing_hash ne ''){
-        print "$file already has a hash: $existing_hash -- Skipping\n";
-    } else {
-        print "Creating a new hash for $file\n";
-        &create_new_hash($file);
+    my $stored = &get_stored_hash($file);
+    if ($stored ne '') {
+        print "$file already has a hash: $stored -- Skipping\n";
+		return;
     }
+
+	print "Creating a new hash for $file\n";
+	&store_hash($file);
 }
 
 ################################################################################
 # Initial-hash the file indiscriminately
 sub mode_force {
-	return &create_new_hash($file);
+	return &store_hash($file);
 }
 
 ################################################################################
@@ -62,7 +63,7 @@ sub mode_force {
 sub mode_verify {
 	my ($file) = @_;
 
-	my $stored = &read_existing_hash($file);
+	my $stored = &get_stored_hash($file);
 
 	return if ($stored eq ''); # No existing hash - skip file
 
@@ -89,7 +90,7 @@ EOF
 sub mode_all {
 	my ($file) = @_;
 
-	my $stored = &read_existing_hash($file);
+	my $stored = &get_stored_hash($file);
 
 	return &mode_new($file) if ($stored eq '');
 	return &mode_verify($file);
@@ -110,9 +111,9 @@ sub mode_remove {
 
 ################################################################################
 # Hash the file and write the hash+htime to the file metadata.
-sub create_new_hash {
+sub store_hash {
     my ($file) = @_;
-    my $hash = &hash_file($file);
+    my $hash = &hash_content($file);
     my $time = DateTime->now;
     system("setfattr --restore=- <<EOF
 # file: $file
@@ -126,12 +127,12 @@ EOF
 # Read back a hash from a file and compare
 sub verify_hash {
     my ($file, $stored) = @_;
-    return &hash_file($file) eq $stored;
+    return &hash_content($file) eq $stored;
 }
 
 ################################################################################
 # Hash the file and return the resulting hash
-sub hash_file {
+sub hash_content {
     my ($file) = @_;
     my $hash = `md5sum '$file' | cut -d ' ' -f 1`;
     chomp $hash;
@@ -140,7 +141,7 @@ sub hash_file {
 
 ################################################################################
 # Read back a hash from a file.
-sub read_existing_hash {
+sub get_stored_hash {
     my ($file) = @_;
     my $hash = `getfattr -d '$file' | grep user.rk.md5 | sed 's/user.rk.md5="//' | sed 's/"\$//'`;
     chomp $hash;
