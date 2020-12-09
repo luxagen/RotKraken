@@ -31,9 +31,14 @@ sub get_meta() {
 # -i    (import)
 # -e    (export)
 
-use Data::Dumper;
+my $fs = shift;
 
-sub initial_hashing() {
+&test_nfx($fs.'/1 - name with a space.testfile');
+&test_nv ($fs.'/2 - name with a space.testfile');
+#&test_a  ($fs.'/3 - name with a space.testfile');
+#&test_ie ($fs.'/4 - name with a space.testfile');
+
+sub test_nfx() {
 	my ($file) = @_;
 
 	############################################################################
@@ -100,6 +105,163 @@ sub initial_hashing() {
     system("rm '$file'");
 }
 
-my $fs = shift;
+sub test_nv() {
+	my ($file) = @_;
 
-&initial_hashing($fs.'/1 - name with a space.testfile');
+	############################################################################
+	## Constants/variables
+
+	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
+	my $v2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+	my $h1 = 'e302f9ecd2d189fa80aac1c3392e9b9c';
+
+	my %meta;
+
+	############################################################################
+	## Test body
+
+    system("echo '$v1' > '$file'");  # Write content
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,0);
+
+	system("./hattr -v '$file'"); # Verify should no-op
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,0);
+
+	system("./hattr -n '$file'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+
+	my $htime = $meta{htime};
+
+	sleep(1);
+	system("./hattr -v '$file'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,4);
+	&is($meta{md5},$h1);
+	&is($meta{htime},$htime); # TODO FORMAT CHECK
+	&is($meta{state},'V');
+	&ok($meta{vtime} gt $meta{htime}); # TODO FORMAT CHECK
+
+	my $last_vtime = $meta{vtime};
+
+    system("echo '$v2' > '$file'"); # Change content
+
+	sleep(1);
+	system("./hattr -v '$file'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,4);
+	&is($meta{md5},$h1);
+	&is($meta{htime},$htime); # TODO FORMAT CHECK
+	&is($meta{state},'X');
+	&ok($meta{vtime} eq $last_vtime); # TODO FORMAT CHECK
+
+    system("rm '$file'");
+}
+
+sub test_a() {
+	my ($file1) = @_;
+	my $file2 = "$file1.b";
+	$file1 .= ".a";
+
+	############################################################################
+	## Constants/variables
+
+	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
+	my $v2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	my $v3 = '0123456789';
+
+	my $h1 = 'e302f9ecd2d189fa80aac1c3392e9b9c';
+	my $h2 = '1d238b74da513ce35e129e7dc07060ad';
+
+	my %meta;
+
+	############################################################################
+	## Test body
+
+    system("echo '$v1' > '$file1'");  # Write content
+
+	%meta = &get_meta($file1);
+	&is(scalar keys %meta,0);
+
+	system("./hattr -a '$file1'");
+
+	%meta = &get_meta($file1);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+
+	my $htime = $meta{htime};
+
+	sleep(1);
+
+    system("echo '$v3' > '$file1'");  # Change content
+    system("echo '$v2' > '$file2'");  # Write content
+
+	system("./hattr -a '$file1'");
+	system("./hattr -a '$file2'"); # TODO combine with previous
+
+	%meta = &get_meta($file1);
+	&is(scalar keys %meta,3);
+	&is($meta{md5},$h1);
+	&is($meta{htime},$htime); # TODO FORMAT CHECK
+	&is($meta{state},'X');
+
+	%meta = &get_meta($file2);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h2);
+	&ok($meta{htime} gt $htime); # TODO FORMAT CHECK
+
+    system("rm '$file1' '$file2'");
+}
+
+sub test_ie {
+	my ($file) = @_;
+
+	############################################################################
+	## Constants/variables
+
+	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
+	my $h1 = 'badbadbadbadbadbadbadbadbadbaaad';
+
+	my %meta;
+
+	############################################################################
+	## Test body
+
+    system("echo '$v1' > '$file'");  # Write content
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,0);
+
+	system("./hattr -e '$file'"); # TODO check output for ????
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,0);
+
+	system("./hattr -i '$file' '$h1'");
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+
+	system("./hattr -e '$file'"); # TODO check output for $h1
+
+	%meta = &get_meta($file);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+
+	# check output
+
+    system("rm '$file'");
+}
