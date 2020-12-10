@@ -47,7 +47,7 @@ sub mode_new {
     }
 
 	print "Creating a new hash for $file\n";
-	&store_hash($file);
+	&hash_and_store($file);
 }
 
 ################################################################################
@@ -102,10 +102,9 @@ sub mode_remove {
 # HELPERS
 
 ################################################################################
-# Hash the file and write the hash+htime to the file metadata.
+# Store the supplied hash into a file's metadata
 sub store_hash {
-    my ($file) = @_;
-    my $hash = &hash_content($file);
+    my ($file, $hash) = @_;
     my $time = DateTime->now;
     system("setfattr --restore=- <<EOF
 # file: $file
@@ -113,6 +112,14 @@ user.rk.md5=\"$hash\"
 user.rk.htime=\"$time\"
 EOF
 ");
+}
+
+################################################################################
+# Hash the file and write metadata
+sub hash_and_store {
+    my ($file) = @_;
+    my $hash = &hash_content($file);
+	return &store_hash($file, $hash);
 }
 
 ################################################################################
