@@ -46,6 +46,10 @@ my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
 my $h2 = '437bba8e0bf58337674f4539e75186ac';
 my $h3 = '781e5e245d69b566979b86e28d23f2c7';
 
+my $fs = shift;
+my $f1 = "$fs/1 with space.testfile";
+my $f2 = "$fs/2 with space.testfile";
+
 ################################################################################
 
 # TODO:
@@ -55,60 +59,56 @@ my $h3 = '781e5e245d69b566979b86e28d23f2c7';
 # -x    Delete all metadata. - THIS NEEDS RETESTING WITH ALL 4 KEYS!
 # -e    (export)
 
-my $fs = shift;
+&test_nx();
+&test_nv();
+&test_a ();
+&test_e ();
 
-&test_nx($fs.'/1 - name with a space.testfile');
-&test_nv($fs.'/2 - name with a space.testfile');
-&test_a ($fs.'/3 - name with a space.testfile');
-&test_e ($fs.'/4 - name with a space.testfile');
+exit 0;
 
 ################################################################################
 
 sub test_nx() {
-	my ($file) = @_;
-
 	my %meta;
 	my $last_htime;
 
-	&clobber_file($file, $v1);
+	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($file);
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&hattr($file, 'n'), "? $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'n'), "? $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
 	$last_htime = $meta{htime};
 
-	&clobber_file($file, $v2);
+	&clobber_file($f1, $v2);
 
 	sleep(1);
-	&is(&hattr($file, 'x'), "  $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'x'), "  $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-    unlink $file;
+    unlink $f1;
 }
 
 sub test_nv() {
-	my ($file) = @_;
-
 	my %meta;
 
-	&clobber_file($file, $v1);
+	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($file);
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&hattr($file, 'v'), "  $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'v'), "  $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&hattr($file, 'n'), "? $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'n'), "? $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
@@ -116,8 +116,8 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1);
-	&is(&hattr($file, 'v'), "V $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'v'), "V $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
@@ -126,88 +126,82 @@ sub test_nv() {
 
 	my $last_vtime = $meta{vtime};
 
-	&clobber_file($file, $v2);
+	&clobber_file($f1, $v2);
 
 	sleep(1);
-	&is(&hattr($file, 'v'), "X $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'v'), "X $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
 	&is($meta{state},'X');
 	&ok($meta{vtime} eq $last_vtime); # TODO FORMAT CHECK
 
-    unlink $file;
+    unlink $f1;
 }
 
 sub test_a() {
-	my ($file1) = @_;
-	my $file2 = "$file1.b";
-	$file1 .= ".a";
-
 	my %meta;
 
-	&clobber_file($file1, $v1);
+	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($file1);
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&hattr($file1, 'a'), "? $file1\n");
-	%meta = &get_meta($file1);
+	&is(&hattr($f1, 'a'), "? $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
 	my $htime = $meta{htime};
 
-	&clobber_file($file1, $v3);
-	&clobber_file($file2, $v2);
+	&clobber_file($f1, $v3);
+	&clobber_file($f2, $v2);
 
-	%meta = &get_meta($file2);
+	%meta = &get_meta($f2);
 	&is(scalar keys %meta,0);
 
 	sleep(1);
 	&is(
-		&hattr($file1, 'a') . &hattr($file2, 'a'), # TODO one call
-		"X $file1\n? $file2\n");
-	%meta = &get_meta($file1);
+		&hattr($f1, 'a') . &hattr($f2, 'a'), # TODO one call
+		"X $f1\n? $f2\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,3);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
 	&is($meta{state},'X');
-	%meta = &get_meta($file2);
+	%meta = &get_meta($f2);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h2);
 	&ok($meta{htime} gt $htime); # TODO FORMAT CHECK
 
-    unlink $file1, $file2;
+    unlink $f1, $f2;
 }
 
 sub test_e {
-	my ($file) = @_;
-
 	my %meta;
 
-	&clobber_file($file, $v1);
+	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($file);
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&hattr($file, 'e'), "        26  ????????????????????????????????  $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'e'), "        26  ????????????????????????????????  $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&hattr($file, 'a'), "? $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'a'), "? $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-	&is(&hattr($file, 'e'), "        26  $h1  $file\n");
-	%meta = &get_meta($file);
+	&is(&hattr($f1, 'e'), "        26  $h1  $f1\n");
+	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-    unlink $file;
+    unlink $f1;
 }
