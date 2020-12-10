@@ -42,7 +42,7 @@ my $fs = shift;
 &test_nx($fs.'/1 - name with a space.testfile');
 &test_nv($fs.'/2 - name with a space.testfile');
 &test_a ($fs.'/3 - name with a space.testfile');
-#&test_e ($fs.'/4 - name with a space.testfile');
+&test_e ($fs.'/4 - name with a space.testfile');
 
 sub test_nx() {
 	my ($file) = @_;
@@ -220,17 +220,17 @@ sub test_e {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($file, 'e'), "???????????????????????????????? $file\n");
+	&is(&invoke($file, 'e'), "        26  ????????????????????????????????  $file\n");
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($file, 'a'), "$h1 $file\n");
+	&is(&invoke($file, 'a'), "? $file\n");
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-	&is(&invoke($file, 'e'), "$h1 $file\n");
+	&is(&invoke($file, 'e'), "        26  $h1  $file\n");
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
