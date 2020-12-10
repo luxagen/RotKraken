@@ -35,6 +35,19 @@ sub clobber_file {
     system("echo -n '$content' > '$file'");	
 }
 
+################################################################################
+# Test constants
+
+my $v1 = 'abcdefghijklmnopqrstuvwxyz';
+my $v2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+my $v3 = '0123456789';
+
+my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
+my $h2 = '437bba8e0bf58337674f4539e75186ac';
+my $h3 = '781e5e245d69b566979b86e28d23f2c7';
+
+################################################################################
+
 # TODO:
 # -l    Default: Print some status line
 # -v    Verify metadata where it exists
@@ -49,25 +62,13 @@ my $fs = shift;
 &test_a ($fs.'/3 - name with a space.testfile');
 &test_e ($fs.'/4 - name with a space.testfile');
 
+################################################################################
+
 sub test_nx() {
 	my ($file) = @_;
 
-	############################################################################
-	## Constants/variables
-
-	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
-	my $v2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	my $v3 = '0123456789';
-
-	my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
-	my $h2 = '437bba8e0bf58337674f4539e75186ac';
-	my $h3 = '781e5e245d69b566979b86e28d23f2c7';
-
 	my %meta;
 	my $last_htime;
-
-	############################################################################
-	## Test body
 
 	&clobber_file($file, $v1);
 
@@ -95,18 +96,7 @@ sub test_nx() {
 sub test_nv() {
 	my ($file) = @_;
 
-	############################################################################
-	## Constants/variables
-
-	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
-	my $v2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-	my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
-
 	my %meta;
-
-	############################################################################
-	## Test body
 
 	&clobber_file($file, $v1);
 
@@ -155,20 +145,7 @@ sub test_a() {
 	my $file2 = "$file1.b";
 	$file1 .= ".a";
 
-	############################################################################
-	## Constants/variables
-
-	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
-	my $v2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	my $v3 = '0123456789';
-
-	my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
-	my $h2 = '437bba8e0bf58337674f4539e75186ac';
-
 	my %meta;
-
-	############################################################################
-	## Test body
 
 	&clobber_file($file1, $v1);
 
@@ -209,16 +186,7 @@ sub test_a() {
 sub test_e {
 	my ($file) = @_;
 
-	############################################################################
-	## Constants/variables
-
-	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
-	my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
-
 	my %meta;
-
-	############################################################################
-	## Test body
 
 	&clobber_file($file, $v1);
 
