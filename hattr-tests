@@ -84,7 +84,7 @@ sub test_nx() {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-    system("rm '$file'");
+    unlink $file;
 }
 
 sub test_nv() {
@@ -142,7 +142,7 @@ sub test_nv() {
 	&is($meta{state},'X');
 	&ok($meta{vtime} eq $last_vtime); # TODO FORMAT CHECK
 
-    system("rm '$file'");
+    unlink $file;
 }
 
 sub test_a() {
@@ -198,7 +198,7 @@ sub test_a() {
 	&is($meta{md5},$h2);
 	&ok($meta{htime} gt $htime); # TODO FORMAT CHECK
 
-    system("rm '$file1' '$file2'");
+    unlink $file1, $file2;
 }
 
 sub test_e {
@@ -236,5 +236,5 @@ sub test_e {
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-    system("rm '$file'");
+    unlink $file;
 }
