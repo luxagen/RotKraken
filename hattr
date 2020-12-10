@@ -39,8 +39,9 @@ if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
 # Initial-hash the file if it hasn't already been done
 sub mode_new {
     my ($file) = @_;
+
     my $stored = &get_stored_hash($file);
-    if ($stored ne '') {
+    if (defined $stored) {
         print "$file already has a hash: $stored -- Skipping\n";
 		return;
     }
@@ -56,7 +57,7 @@ sub mode_verify {
 
 	my $stored = &get_stored_hash($file);
 
-	return if ($stored eq ''); # No existing hash - skip file
+	return unless (defined $stored); # No existing hash - skip file
 
 	if (&verify_hash($file,$stored)) {
 		my $time = DateTime->now;
@@ -83,8 +84,8 @@ sub mode_all {
 
 	my $stored = &get_stored_hash($file);
 
-	return &mode_new($file) if ($stored eq '');
-	return &mode_verify($file);
+	return &mode_verify($file) if (defined $stored);
+	return &mode_new($file);
 }
 
 ################################################################################
@@ -136,7 +137,7 @@ sub get_stored_hash {
     my ($file) = @_;
     my $hash = `getfattr -d '$file' | grep user.hattr.md5 | sed 's/user.hattr.md5="//' | sed 's/"\$//'`;
     chomp $hash;
-    return $hash;
+    return 32==length($hash) ? $hash : undef;
 }
 
 ################################################################################
