@@ -1,0 +1,5 @@
+#!/bin/bash
+
+(cd mnt && sudo umount *)
+(cd mnt_ && sudo umount *)
+rm -rf fs mnt_ mnt
