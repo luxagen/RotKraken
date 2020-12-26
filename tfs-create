@@ -1,0 +1,15 @@
+#!/bin/bash
+
+loop=`losetup -f`
+
+mkdir -p fs mnt_ mnt && (cd mnt_ && mkdir $@) && (cd mnt && mkdir $@)
+for fs in $@; do (
+	cd fs &&
+	truncate -s 128m $fs &&
+	sudo losetup $loop $fs &&
+	sudo mkfs -t $fs $loop &&
+	sudo mount $fs ../mnt_/$fs &&
+	sudo bindfs -u $(id -u) -g $(id -g) ../mnt_/$fs ../mnt/$fs &&
+	sleep 0.1 &&
+	sudo losetup -d $loop
+); done

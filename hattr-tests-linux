@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# reiserfs, xfs, zfs: too inconsistent with the standard mkfs command to bother with for now
+
+# minix, exfat, vfat don't support xattrs
+# msdos, fat don't support long filenames
+
+FSLIST='ext2 ext3 ext4 btrfs ntfs'
+
+./tfs-create $FSLIST
+
+for fs in $FSLIST; do
+	./hattr-tests mnt/$fs
+done
+
+./tfs-destroy
