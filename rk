@@ -33,17 +33,21 @@ if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
     exit 1;
 }
 
-#&file_list  ($file) if ($mode =~ m/-l/);
-&file_new   ($file) if ($mode =~ m/-n/);
-&file_verify($file) if ($mode =~ m/-v/);
-&file_all   ($file) if ($mode =~ m/-a/);
-&file_remove($file) if ($mode =~ m/-x/);
-&file_export($file) if ($mode =~ m/-e/);
+&file_process($file, $mode);
+exit(0);
 
 ################################################################################
-# Main program loop.
-#foreach my $file (@ARGV) {
-#}
+# Process a file
+sub file_process {
+    my ($file,$mode) = @_;
+
+	#&file_list  ($file) if ($mode =~ m/-l/);
+	&file_new   ($file) if ($mode =~ m/-n/);
+	&file_verify($file) if ($mode =~ m/-v/);
+	&file_all   ($file) if ($mode =~ m/-a/);
+	&file_remove($file) if ($mode =~ m/-x/);
+	&file_export($file) if ($mode =~ m/-e/);
+}
 
 ################################################################################
 # Initial-hash the file if it hasn't already been done
