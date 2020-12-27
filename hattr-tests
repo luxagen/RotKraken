@@ -63,6 +63,7 @@ my $f2 = "$fs/2 with space.testfile";
 &test_nv();
 &test_a ();
 &test_e ();
+&test_l ();
 
 exit 0;
 
@@ -209,4 +210,33 @@ sub test_e {
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
     unlink $f1;
+}
+
+sub test_l {
+	my %meta;
+
+	&clobber_file($f1, $v1);
+
+	%meta = &get_meta($f1);
+	&is(scalar keys %meta,0);
+
+	symlink($f1, $f2) or die "Couldn't create symlink!";
+
+	%meta = &get_meta($f2);
+	&is(scalar keys %meta,0);
+
+	&is(&hattr($f2, 'n'), "? $f2\n");
+	%meta = &get_meta($f2);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+
+	my $htime = $meta{htime};
+
+	%meta = &get_meta($f1);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
+
+	unlink $f1,$f2;
 }
