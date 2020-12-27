@@ -216,5 +216,15 @@ sub meta_get() {
         $fields{$1} = $2;
     }
 
+	# Individual validation
+	die 'Bad hash!'  if defined   $fields{md5}    and  $fields{md5}   !~ /^[\da-f]{32}$/;
+	die 'Bad htime!' if defined   $fields{htime}  and  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+	die 'Bad state!' if defined   $fields{state}  and  $fields{state} !~ /[VX]/;
+	die 'Bad htime!' if defined   $fields{vtime}  and  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+	# Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
+	delete @fields{'md5', 'htime', 'state', 'vtime'} unless  defined $fields{md5} and defined $fields{htime};
+	delete @fields{'state', 'vtime'} unless defined $fields{state};
+
     return %fields;
 }

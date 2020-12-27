@@ -53,7 +53,7 @@ sub test_nx() {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+	&is(length($meta{htime}),19);
 
 	my $htime = $meta{htime};
 
@@ -61,7 +61,7 @@ sub test_nx() {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
+	&ok($meta{htime} eq $htime);
 
 	&clobber_file("$fs/$f1", $v2);
 
@@ -90,7 +90,7 @@ sub test_nv() {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+	&is(length($meta{htime}),19);
 
 	my $htime = $meta{htime};
 
@@ -99,9 +99,9 @@ sub test_nv() {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
-	&is($meta{htime},$htime); # TODO FORMAT CHECK
+	&is($meta{htime},$htime);
 	&is($meta{state},'V');
-	&ok($meta{vtime} gt $meta{htime}); # TODO FORMAT CHECK
+	&ok($meta{vtime} gt $meta{htime});
 
 	my $last_vtime = $meta{vtime};
 
@@ -112,9 +112,9 @@ sub test_nv() {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
-	&is($meta{htime},$htime); # TODO FORMAT CHECK
+	&is($meta{htime},$htime);
 	&is($meta{state},'X');
-	&ok($meta{vtime} eq $last_vtime); # TODO FORMAT CHECK
+	&ok($meta{vtime} eq $last_vtime);
 
     unlink "$fs/$f1";
 }
@@ -132,7 +132,7 @@ sub test_a() {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+	&is(length($meta{htime}),19);
 
 	my $htime = $meta{htime};
 
@@ -149,12 +149,12 @@ sub test_a() {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,3);
 	&is($meta{md5},$h1);
-	&is($meta{htime},$htime); # TODO FORMAT CHECK
+	&is($meta{htime},$htime);
 	&is($meta{state},'X');
 	%meta = &meta_get("$fs/$f2");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h2);
-	&ok($meta{htime} gt $htime); # TODO FORMAT CHECK
+	&ok($meta{htime} gt $htime);
 
     unlink "$fs/$f1", "$fs/$f2";
 }
@@ -176,13 +176,13 @@ sub test_e {
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+	&is(length($meta{htime}),19);
 
 	&is(&invoke('e', ("$fs/$f1")), "        26  $h1  $fs/$f1\n");
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+	&is(length($meta{htime}),19);
 
     unlink "$fs/$f1";
 }
@@ -205,14 +205,14 @@ sub test_l {
 	%meta = &meta_get("$fs/$f2");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19); # TODO FORMAT CHECK
+	&is(length($meta{htime}),19);
 
 	my $htime = $meta{htime};
 
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
-	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
+	&ok($meta{htime} eq $htime);
 
 	unlink "$fs/$f1","$fs/$f2";
 }
@@ -259,6 +259,16 @@ sub meta_get() {
         next unless m/^[\s]*user.rk.(md5|htime|state|vtime)="(.*)"[\s]*$/;
         $fields{$1} = $2;
     }
+
+	# Individual validation
+	not defined $fields{md5}  or  $fields{md5} =~ /^[\da-f]{32}$/  or  die 'Bad hash!';
+	not defined $fields{htime}  or  $fields{htime} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/  or  die 'Bad htime!';
+	not defined $fields{state}  or  $fields{state} =~ /[VX]/  or  die 'Bad state!';
+	not defined $fields{vtime}  or  $fields{vtime} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/  or  die 'Bad htime!';
+
+	# Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
+	delete @fields{'md5', 'htime', 'state', 'vtime'} if (not (defined $fields{md5} and defined $fields{htime}));
+	delete @fields{'state', 'vtime'} if (not defined $fields{state});
 
     return %fields;
 }
