@@ -30,12 +30,12 @@ if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
     exit 1;
 }
 
-#&mode_list  ($file) if ($mode =~ m/-l/);
-&mode_new   ($file)     if ($mode =~ m/-n/);
-&mode_verify($file)     if ($mode =~ m/-v/);
-&mode_all   ($file)     if ($mode =~ m/-a/);
-&mode_remove($file)     if ($mode =~ m/-x/);
-&mode_export($file)     if ($mode =~ m/-e/);
+#&file_list  ($file) if ($mode =~ m/-l/);
+&file_new   ($file)     if ($mode =~ m/-n/);
+&file_verify($file)     if ($mode =~ m/-v/);
+&file_all   ($file)     if ($mode =~ m/-a/);
+&file_remove($file)     if ($mode =~ m/-x/);
+&file_export($file)     if ($mode =~ m/-e/);
 
 ################################################################################
 # Main program loop.
@@ -44,7 +44,7 @@ if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
 
 ################################################################################
 # Initial-hash the file if it hasn't already been done
-sub mode_new {
+sub file_new {
     my ($file) = @_;
 
     my $stored = &get_stored_hash($file);
@@ -63,7 +63,7 @@ sub mode_new {
 
 ################################################################################
 # Verify the file if it's been initial-hashed
-sub mode_verify {
+sub file_verify {
 	my ($file) = @_;
 
 	my $stored = &get_stored_hash($file);
@@ -96,18 +96,18 @@ EOF
 
 ################################################################################
 # Verify the file if it's been initial-hashed; otherwise initial-hash it
-sub mode_all {
+sub file_all {
 	my ($file) = @_;
 
 	my $stored = &get_stored_hash($file);
 
-	return &mode_verify($file) if (defined $stored);
-	return &mode_new($file);
+	return &file_verify($file) if (defined $stored);
+	return &file_new($file);
 }
 
 ################################################################################
 # Remove all metadata from the file
-sub mode_remove {
+sub file_remove {
     my ($file) = @_;
 
     system("setfattr --remove=user.hattr.md5   '$file' >/dev/null 2>&1");
@@ -120,7 +120,7 @@ sub mode_remove {
 
 ################################################################################
 # Print a status line for the file in `md5deep -zl` formst
-sub mode_export {
+sub file_export {
     my ($file) = @_;
 	my $size = -s $file;
 	my $stored  =  &get_stored_hash($file) // '????????????????????????????????';
