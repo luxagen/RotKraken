@@ -8,7 +8,7 @@ use IPC::Run qw(run);
 use FindBin;
 my $testee = "$FindBin::Bin/rk";
 
-sub get_meta() {
+sub meta_get() {
     my ($file) = @_;
 
     my $dump=`getfattr -d '$file'`;
@@ -75,11 +75,11 @@ sub test_nx() {
 
 	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
 	&is(&invoke('n', ($f1)), "? $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
@@ -87,7 +87,7 @@ sub test_nx() {
 	my $htime = $meta{htime};
 
 	&is(&invoke('n', ($f1)), "? $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
@@ -96,7 +96,7 @@ sub test_nx() {
 
 	sleep(1);
 	&is(&invoke('x', ($f1)), "  $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
     unlink $f1;
@@ -107,15 +107,15 @@ sub test_nv() {
 
 	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
 	&is(&invoke('v', ($f1)), "  $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
 	&is(&invoke('n', ($f1)), "? $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
@@ -124,7 +124,7 @@ sub test_nv() {
 
 	sleep(1);
 	&is(&invoke('v', ($f1)), "V $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
@@ -137,7 +137,7 @@ sub test_nv() {
 
 	sleep(1);
 	&is(&invoke('v', ($f1)), "X $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
@@ -152,11 +152,11 @@ sub test_a() {
 
 	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
 	&is(&invoke('a', ($f1)), "? $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
@@ -166,19 +166,19 @@ sub test_a() {
 	&clobber_file($f1, $v3);
 	&clobber_file($f2, $v2);
 
-	%meta = &get_meta($f2);
+	%meta = &meta_get($f2);
 	&is(scalar keys %meta,0);
 
 	sleep(1);
 	&is(
 		&invoke('a', ($f1, $f2)),
 		"X $f1\n? $f2\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,3);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
 	&is($meta{state},'X');
-	%meta = &get_meta($f2);
+	%meta = &meta_get($f2);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h2);
 	&ok($meta{htime} gt $htime); # TODO FORMAT CHECK
@@ -191,21 +191,21 @@ sub test_e {
 
 	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
 	&is(&invoke('e', ($f1)), "        26  ????????????????????????????????  $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
 	&is(&invoke('a', ($f1)), "? $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
 	&is(&invoke('e', ($f1)), "        26  $h1  $f1\n");
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
@@ -218,23 +218,23 @@ sub test_l {
 
 	&clobber_file($f1, $v1);
 
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,0);
 
 	symlink($lt1, $f2) or die "Couldn't create symlink!";
 
-	%meta = &get_meta($f2);
+	%meta = &meta_get($f2);
 	&is(scalar keys %meta,0);
 
 	&is(&invoke('n', ($f2)), "? $f2\n");
-	%meta = &get_meta($f2);
+	%meta = &meta_get($f2);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
 	my $htime = $meta{htime};
 
-	%meta = &get_meta($f1);
+	%meta = &meta_get($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK

@@ -66,7 +66,7 @@ sub file_new {
 		return;
 	}
 
-	my %meta = &get_meta($file);
+	my %meta = &meta_get($file);
 
 	printf "%s $file\n", $meta{state} // '?';
 	return;
@@ -189,7 +189,7 @@ sub get_stored_hash {
 ################################################################################
 # Retrieve metadata from a file's extended attributes
 # TODO deduplicate with the version in the tests file
-sub get_meta() {
+sub meta_get() {
     my ($file) = @_;
 
     my $dump=`getfattr -d '$file'`;
