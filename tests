@@ -70,7 +70,6 @@ exit 0;
 
 sub test_nx() {
 	my %meta;
-	my $last_htime;
 
 	&clobber_file($f1, $v1);
 
@@ -83,7 +82,13 @@ sub test_nx() {
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-	$last_htime = $meta{htime};
+	my $htime = $meta{htime};
+
+	&is(&invoke($f1, 'n'), "? $f1\n");
+	%meta = &get_meta($f1);
+	&is(scalar keys %meta,2);
+	&is($meta{md5},$h1);
+	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
 
 	&clobber_file($f1, $v2);
 
