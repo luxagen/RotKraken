@@ -65,7 +65,7 @@ sub test_nx() {
 
 	&clobber_file("$fs/$f1", $v2);
 
-	sleep(1);
+	sleep(1); # Make sure timestamp changes
 	&is(&invoke('x', ("$fs/$f1")), "  $fs/$f1\n");
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
@@ -94,7 +94,7 @@ sub test_nv() {
 
 	my $htime = $meta{htime};
 
-	sleep(1);
+	sleep(1); # Make sure timestamp changes
 	&is(&invoke('v', ("$fs/$f1")), "V $fs/$f1\n");
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,4);
@@ -107,7 +107,7 @@ sub test_nv() {
 
 	&clobber_file("$fs/$f1", $v2);
 
-	sleep(1);
+	sleep(1); # Make sure timestamp changes
 	&is(&invoke('v', ("$fs/$f1")), "X $fs/$f1\n");
 	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,4);
@@ -142,7 +142,7 @@ sub test_a() {
 	%meta = &meta_get("$fs/$f2");
 	&is(scalar keys %meta,0);
 
-	sleep(1);
+	sleep(1); # Make sure timestamp changes
 	&is(
 		&invoke('a', ("$fs/$f1", "$fs/$f2")),
 		"X $fs/$f1\n? $fs/$f2\n");
