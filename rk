@@ -25,6 +25,9 @@ use DateTime qw(now);
 my $mode = shift;
 my $file = shift;
 
+die "Path '$file' not found" unless -e $file;
+die "Path '$file' is not a file" unless -f $file; # TODO support dirs too
+
 if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
     print "Incorrect usage!\n";
     exit 1;
