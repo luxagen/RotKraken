@@ -29,28 +29,28 @@ if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
     exit 1;
 }
 
-foreach my $file (@ARGV) {
-	die "Path '$file' not found" if (not -e $file);
-	die "Path '$file' is not a file" if (not -f $file); # TODO support dirs too
+foreach my $item (@ARGV) {
+	die "Path '$item' not found" if (not -e $item);
+	die "Path '$item' is not a file" if (not -f $item); # TODO support dirs too
 }
 
-foreach my $file (@ARGV) {
-	&file_process($file, $mode);
+foreach my $item (@ARGV) {
+	&item_process($item, $mode);
 }
 
 exit(0);
 
 ################################################################################
 # Initial-hash the file if it hasn't already been done
-sub file_process {
-    my ($file,$mode) = @_;
+sub item_process {
+    my ($item,$mode) = @_;
 
-	#&file_list  ($file) if ($mode =~ m/-l/);
-	&file_new   ($file)     if ($mode =~ m/-n/);
-	&file_verify($file)     if ($mode =~ m/-v/);
-	&file_all   ($file)     if ($mode =~ m/-a/);
-	&file_remove($file)     if ($mode =~ m/-x/);
-	&file_export($file)     if ($mode =~ m/-e/);
+	#&file_list  ($item) if ($mode =~ m/-l/);
+	&file_new   ($item)     if ($mode =~ m/-n/);
+	&file_verify($item)     if ($mode =~ m/-v/);
+	&file_all   ($item)     if ($mode =~ m/-a/);
+	&file_remove($item)     if ($mode =~ m/-x/);
+	&file_export($item)     if ($mode =~ m/-e/);
 }
 
 ################################################################################
