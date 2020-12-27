@@ -145,7 +145,7 @@ sub file_export {
 # Store the supplied hash into a file's metadata
 sub store_hash {
     my ($file, $hash) = @_;
-    my $time = DateTime->now;
+    my $time = DateTime->now; # This is UTC
     system("setfattr --restore=- <<EOF
 # file: $file
 user.hattr.md5=\"$hash\"
