@@ -9,6 +9,7 @@
 # -x    Delete all metadata.
 # -i    (import)
 # -e    (export)
+# TODO  option to disable symlink following
 
 ################################################################################
 # Output: status column
@@ -25,6 +26,8 @@ use DateTime qw(now);
 my $mode = shift;
 
 die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[lnvaxe]$/);
+
+my $no_follow_symlinks = 0;
 
 foreach my $item (@ARGV) {
 	die "Path '$item' not found" unless -e $item;
@@ -56,12 +59,25 @@ sub item_process {
 		return;
 	}
 
+	if ($mode =~ m/-x/) {
+		&file_remove($item);
+		return;
+	}
+
+	if ($mode =~ m/-e/) {
+		&file_export($item);
+		return;
+	}
+
+	if ($no_follow_symlinks) {
+		print "L $item\n";
+		return;
+	}
+
 	#&file_list  ($item) if ($mode =~ m/-l/);
 	&file_new   ($item) if ($mode =~ m/-n/);
 	&file_verify($item) if ($mode =~ m/-v/);
 	&file_all   ($item) if ($mode =~ m/-a/);
-	&file_remove($item) if ($mode =~ m/-x/);
-	&file_export($item) if ($mode =~ m/-e/);
 }
 
 ################################################################################
@@ -142,6 +158,12 @@ sub file_remove {
 sub file_export {
     my ($file) = @_;
 	my $size = -s $file;
+
+	if ($no_follow_symlinks) {
+		printf("%10u  llllllllllllllllllllllllllllllll  $file\n", $size);
+		return;
+	}
+
 	my $stored  =  &get_stored_hash($file) // '????????????????????????????????';
 	printf("%10u  $stored  $file\n", $size);
 }
