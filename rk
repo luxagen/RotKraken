@@ -103,15 +103,15 @@ sub file_new {
 sub file_verify {
 	my ($file) = @_;
 
-	my $stored = &get_stored_hash($file);
+	my %meta = &meta_get($file);
 
-	unless (defined $stored) {
+	unless (defined $meta{md5}) {
 		# No existing hash - skip file
 		print "  $file\n";
 		return;
 	}
 
-	if (&verify_hash($file, $stored)) {
+	if (&verify_hash($file, $meta{md5})) {
 		my $time = DateTime->now;
 		system("setfattr --restore=- <<EOF
 # file: $file
@@ -136,9 +136,9 @@ EOF
 sub file_all {
 	my ($file) = @_;
 
-	my $stored = &get_stored_hash($file);
+	my %meta = &meta_get($file);
 
-	return &file_verify($file) if (defined $stored);
+	return &file_verify($file) if (defined $meta{md5});
 	return &file_new($file);
 }
 
@@ -168,7 +168,9 @@ sub file_export {
 		return;
 	}
 
-	my $stored  =  &get_stored_hash($file) // '????????????????????????????????';
+	my %meta = &meta_get($file);
+
+	my $stored  =  $meta{md5} // '????????????????????????????????';
 	printf("%10u  $stored  $file\n", $size);
 }
 
@@ -213,18 +215,6 @@ sub hash_content {
     my $hash = `md5sum $file | cut -d ' ' -f 1`;
     chomp $hash;
     return $hash;
-}
-
-################################################################################
-# Read back a hash from a file.
-sub get_stored_hash {
-    my ($file) = @_;
-
-	$file = shell_quote($file);
-
-    my $hash = `getfattr -d $file | grep user.rk.md5 | sed 's/user.rk.md5="//' | sed 's/"\$//'`;
-    chomp $hash;
-    return 32==length($hash) ? $hash : undef;
 }
 
 ################################################################################
