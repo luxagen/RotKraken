@@ -24,10 +24,7 @@ use DateTime qw(now);
 
 my $mode = shift;
 
-if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
-    print "Incorrect usage!\n";
-    exit 1;
-}
+die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[lnvaxe]$/);
 
 foreach my $item (@ARGV) {
 	die "Path '$item' not found" unless -e $item;
@@ -72,15 +69,13 @@ sub item_process {
 sub file_new {
     my ($file) = @_;
 
-    my $stored = &get_stored_hash($file);
+	my %meta = &meta_get($file);
 
-	if (not defined $stored) {
+	if (not defined $meta{md5}) {
 		&hash_and_store($file);
 		print "? $file\n";
 		return;
 	}
-
-	my %meta = &meta_get($file);
 
 	printf "%s $file\n", $meta{state} // '?';
 	return;
