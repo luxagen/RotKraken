@@ -27,13 +27,13 @@ my $f3 = "3 with space.testfile";
 ################################################################################
 # Testing program
 
-foreach my $fs (@ARGV) {
-	&test_nx($fs);
-	&test_nv($fs);
-	&test_a ($fs);
-	&test_e ($fs);
-	&test_l ($fs);
-	&test_r ($fs);
+foreach my $base (@ARGV) {
+	&test_nx($base);
+	&test_nv($base);
+	&test_a ($base);
+	&test_e ($base);
+	&test_l ($base);
+	&test_r ($base);
 }
 
 exit 0;
@@ -41,53 +41,53 @@ exit 0;
 ################################################################################
 
 sub test_nx() {
-	my ($fs) = @_;
+	my ($base) = @_;
 	my %meta;
 
-	&clobber_file("$fs/$f1", $v1);
+	&clobber_file("$base/$f1", $v1);
 
-	%meta = &meta_get("$fs/$f1");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ("$fs/$f1")), "? $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('n', ("$base/$f1")), "? $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
 	my $htime = $meta{htime};
 
-	&is(&invoke('n', ("$fs/$f1")), "? $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('n', ("$base/$f1")), "? $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&ok($meta{htime} eq $htime);
 
-	&clobber_file("$fs/$f1", $v2);
+	&clobber_file("$base/$f1", $v2);
 
 	sleep(1); # Make sure timestamp changes
-	&is(&invoke('x', ("$fs/$f1")), "  $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('x', ("$base/$f1")), "  $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-    unlink "$fs/$f1";
+    unlink "$base/$f1";
 }
 
 sub test_nv() {
-	my ($fs) = @_;
+	my ($base) = @_;
 	my %meta;
 
-	&clobber_file("$fs/$f1", $v1);
+	&clobber_file("$base/$f1", $v1);
 
-	%meta = &meta_get("$fs/$f1");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('v', ("$fs/$f1")), "  $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('v', ("$base/$f1")), "  $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ("$fs/$f1")), "? $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('n', ("$base/$f1")), "? $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
@@ -95,8 +95,8 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1); # Make sure timestamp changes
-	&is(&invoke('v', ("$fs/$f1")), "V $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('v', ("$base/$f1")), "V $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime);
@@ -105,143 +105,143 @@ sub test_nv() {
 
 	my $last_vtime = $meta{vtime};
 
-	&clobber_file("$fs/$f1", $v2);
+	&clobber_file("$base/$f1", $v2);
 
 	sleep(1); # Make sure timestamp changes
-	&is(&invoke('v', ("$fs/$f1")), "X $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('v', ("$base/$f1")), "X $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime);
 	&is($meta{state},'X');
 	&ok($meta{vtime} eq $last_vtime);
 
-    unlink "$fs/$f1";
+    unlink "$base/$f1";
 }
 
 sub test_a() {
-	my ($fs) = @_;
+	my ($base) = @_;
 	my %meta;
 
-	&clobber_file("$fs/$f1", $v1);
+	&clobber_file("$base/$f1", $v1);
 
-	%meta = &meta_get("$fs/$f1");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ("$fs/$f1")), "? $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('a', ("$base/$f1")), "? $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
 	my $htime = $meta{htime};
 
-	&clobber_file("$fs/$f1", $v3);
-	&clobber_file("$fs/$f2", $v2);
+	&clobber_file("$base/$f1", $v3);
+	&clobber_file("$base/$f2", $v2);
 
-	%meta = &meta_get("$fs/$f2");
+	%meta = &meta_get("$base/$f2");
 	&is(scalar keys %meta,0);
 
 	sleep(1); # Make sure timestamp changes
 	&is(
-		&invoke('a', ("$fs/$f1", "$fs/$f2")),
-		"X $fs/$f1\n? $fs/$f2\n");
-	%meta = &meta_get("$fs/$f1");
+		&invoke('a', ("$base/$f1", "$base/$f2")),
+		"X $base/$f1\n? $base/$f2\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,3);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime);
 	&is($meta{state},'X');
-	%meta = &meta_get("$fs/$f2");
+	%meta = &meta_get("$base/$f2");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h2);
 	&ok($meta{htime} gt $htime);
 
-    unlink "$fs/$f1", "$fs/$f2";
+    unlink "$base/$f1", "$base/$f2";
 }
 
 sub test_e {
-	my ($fs) = @_;
+	my ($base) = @_;
 	my %meta;
 
-	&clobber_file("$fs/$f1", $v1);
+	&clobber_file("$base/$f1", $v1);
 
-	%meta = &meta_get("$fs/$f1");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('e', ("$fs/$f1")), "        26  ????????????????????????????????  $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('e', ("$base/$f1")), "        26  ????????????????????????????????  $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ("$fs/$f1")), "? $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('a', ("$base/$f1")), "? $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
-	&is(&invoke('e', ("$fs/$f1")), "        26  $h1  $fs/$f1\n");
-	%meta = &meta_get("$fs/$f1");
+	&is(&invoke('e', ("$base/$f1")), "        26  $h1  $base/$f1\n");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
-    unlink "$fs/$f1";
+    unlink "$base/$f1";
 }
 
 sub test_l {
-	my ($fs) = @_;
+	my ($base) = @_;
 	my %meta;
 
-	&clobber_file("$fs/$f1", $v1);
+	&clobber_file("$base/$f1", $v1);
 
-	%meta = &meta_get("$fs/$f1");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	symlink($f1, "$fs/$f2") or die "Couldn't create symlink!";
+	symlink($f1, "$base/$f2") or die "Couldn't create symlink!";
 
-	%meta = &meta_get("$fs/$f2");
+	%meta = &meta_get("$base/$f2");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ("$fs/$f2")), "? $fs/$f2\n");
-	%meta = &meta_get("$fs/$f2");
+	&is(&invoke('n', ("$base/$f2")), "? $base/$f2\n");
+	%meta = &meta_get("$base/$f2");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
 	my $htime = $meta{htime};
 
-	%meta = &meta_get("$fs/$f1");
+	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&ok($meta{htime} eq $htime);
 
-	unlink "$fs/$f1","$fs/$f2";
+	unlink "$base/$f1","$base/$f2";
 }
 
 sub test_r() {
-	my ($fs) = @_;
+	my ($base) = @_;
 	my %meta;
 
-	make_path("$fs/dir1/dir2","$fs/dir1/dir3");
+	make_path("$base/dir1/dir2","$base/dir1/dir3");
 
-	&clobber_file("$fs/dir1/$f1", $v1);
-	&clobber_file("$fs/dir1/dir2/$f1", $v1);
-	&clobber_file("$fs/dir1/dir2/$f2", $v2);
-	&clobber_file("$fs/dir1/dir3/$f1", $v1);
-	&clobber_file("$fs/dir1/dir3/$f3", $v3);
+	&clobber_file("$base/dir1/$f1", $v1);
+	&clobber_file("$base/dir1/dir2/$f1", $v1);
+	&clobber_file("$base/dir1/dir2/$f2", $v2);
+	&clobber_file("$base/dir1/dir3/$f1", $v1);
+	&clobber_file("$base/dir1/dir3/$f3", $v3);
 
 	my @expected = sort(
-		"? $fs/dir1/dir2/$f1",
-		"? $fs/dir1/dir3/$f1",
-		"? $fs/dir1/$f1"     ,
-		"? $fs/dir1/dir2/$f2",
-		"? $fs/dir1/dir3/$f3");
+		"? $base/dir1/dir2/$f1",
+		"? $base/dir1/dir3/$f1",
+		"? $base/dir1/$f1"     ,
+		"? $base/dir1/dir2/$f2",
+		"? $base/dir1/dir3/$f3");
 
 	my @got = sort(
-		split(/\n/, &invoke('n', "$fs/dir1")));
+		split(/\n/, &invoke('n', "$base/dir1")));
 
 	&is_deeply(\@got,\@expected);
 
-    rmtree "$fs/dir1";
+    rmtree "$base/dir1";
 }
 
 ################################################################################
