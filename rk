@@ -74,7 +74,9 @@ sub item_process {
 sub file_new {
     my ($file) = @_;
 
-	my %meta = &meta_get($file);
+	my $m = &meta_get($file);
+	return unless defined $m;
+	my %meta = %{$m};
 
 	if (not defined $meta{md5}) {
 		&hash_and_store($file);
@@ -89,7 +91,9 @@ sub file_new {
 sub file_verify {
 	my ($file) = @_;
 
-	my %meta = &meta_get($file);
+	my $m = &meta_get($file);
+	return unless defined $m;
+	my %meta = %{$m};
 
 	return print_status($file, ' ') unless (defined $meta{md5}); # No existing hash? Skip file
 
@@ -99,7 +103,7 @@ sub file_verify {
 			setfattr_restore_filename($file), # Handle newlines in filenames
 			DateTime->now);
 
-		run [ 'setfattr', '--restore=-' ], \$script or die;
+		run [ 'setfattr', '--restore=-' ], \$script;
 		print_status($file, 'V');
 	}
 	else {
@@ -107,7 +111,7 @@ sub file_verify {
 			qq(# file: %s\nuser.rk.state="X"),
 			setfattr_restore_filename($file)); # Handle newlines in filenames
 
-		run [ 'setfattr', '--restore=-' ], \$script or die;
+		run [ 'setfattr', '--restore=-' ], \$script;
 		print_status($file, 'X');
 	}
 }
@@ -117,7 +121,9 @@ sub file_verify {
 sub file_all {
 	my ($file) = @_;
 
-	my %meta = &meta_get($file);
+	my $m = &meta_get($file);
+	return unless defined $m;
+	my %meta = %{$m};
 
 	return &file_verify($file) if (defined $meta{md5});
 	return &file_new($file);
@@ -131,6 +137,7 @@ sub file_remove {
 	my $out;
 	my $err;
 
+	# Discard stderr and ignore return codes to make a best effort at xattr deletion
 	run [ 'setfattr', '--remove=user.rk.md5'  , $file ], \undef, \$out, \$err;
 	run [ 'setfattr', '--remove=user.rk.htime', $file ], \undef, \$out, \$err;
 	run [ 'setfattr', '--remove=user.rk.state', $file ], \undef, \$out, \$err;
@@ -154,13 +161,14 @@ sub file_export {
 		return;
 	}
 
-	my %meta = &meta_get($file);
+	my $m = &meta_get($file);
+	return unless defined $m;
+	my %meta = %{$m};
 
-	my $stored  =  $meta{md5} // '????????????????????????????????';
 	printf(
 		"%10u  %s  %s\n",
 		$size,
-		$stored,
+		$meta{md5} // '????????????????????????????????',
 		&filename_for_output($file));
 }
 
@@ -194,7 +202,7 @@ sub store_hash {
 		$file =~ s/\n/\\012/gr, # Handle newlines in filenames
 		DateTime->now); # This is definitely UTC
 
-	run [ 'setfattr', '--restore=-' ], \$script or die;
+	run [ 'setfattr', '--restore=-' ], \$script;
 }
 
 ################################################################################
@@ -202,7 +210,7 @@ sub store_hash {
 sub hash_and_store {
     my ($file) = @_;
     my $hash = &hash_content($file);
-	return &store_hash($file, $hash);
+	&store_hash($file, $hash) if defined $hash;
 }
 
 ################################################################################
@@ -218,11 +226,8 @@ sub hash_content {
     my ($file) = @_;
 
 	my $out;
-	run [ 'md5sum', $file ], \undef, \$out or die;
-
-	$out =~ /^\\?([\da-f]{32})  / or die 'Bad md5sum output!';
-
-	return $1;
+	return $1 if (run [ 'md5sum', $file ], \undef, \$out  and  $out =~ /^\\?([\da-f]{32})  /);
+	return undef; # Some error occurred
 }
 
 ################################################################################
@@ -232,7 +237,7 @@ sub meta_get() {
     my ($file) = @_;
 
 	my $out;
-	run [ 'getfattr', '-d', $file ], \undef, \$out or die;
+	run [ 'getfattr', '-d', $file ], \undef, \$out or return undef;
 
     open my $fh, '<', \$out;
 
@@ -252,5 +257,5 @@ sub meta_get() {
 	delete @fields{'md5', 'htime', 'state', 'vtime'} unless  defined $fields{md5} and defined $fields{htime};
 	delete @fields{'state', 'vtime'} unless defined $fields{state};
 
-    return %fields;
+    return \%fields;
 }
