@@ -207,18 +207,21 @@ sub test_l {
 	%meta = %{&meta_get("$base/$f2")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('n', ("$base/$f2")), "N $base/$p2\n");
+	&is(&hattr('n', ("$base/$f2")), '');
 	%meta = %{&meta_get("$base/$f2")};
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19);
+	&is(scalar keys %meta,0);
 
-	my $htime = $meta{htime};
+	# These are for when no_follow_file_symlinks=0
+#	&is(scalar keys %meta,2);
+#	&is($meta{md5},$h1);
+#	&is(length($meta{htime}),19);
 
-	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h1);
-	&ok($meta{htime} eq $htime);
+#	my $htime = $meta{htime};
+
+#	%meta = %{&meta_get("$base/$f1")};
+#	&is(scalar keys %meta,2);
+#	&is($meta{md5},$h1);
+#	&ok($meta{htime} eq $htime);
 
 	unlink "$base/$f1","$base/$f2";
 }
