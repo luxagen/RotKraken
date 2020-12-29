@@ -23,6 +23,7 @@ use warnings;
 
 use DateTime qw(now);
 use String::ShellQuote qw(shell_quote);
+use IPC::Run qw(run);
 
 my $mode = shift;
 
@@ -210,11 +211,12 @@ sub verify_hash {
 sub hash_content {
     my ($file) = @_;
 
-	$file = shell_quote($file);
+	my $out;
+	run [ 'md5sum', $file ], \undef, \$out or die;
 
-    my $hash = `md5sum $file | cut -d ' ' -f 1`;
-    chomp $hash;
-    return $hash;
+	$out =~ /^[\da-f]{32}  / or die 'Bad md5sum output!';
+
+	return substr($out, 0, 32);
 }
 
 ################################################################################
