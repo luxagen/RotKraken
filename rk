@@ -22,7 +22,6 @@ use strict;
 use warnings;
 
 use DateTime qw(now);
-use String::ShellQuote qw(shell_quote);
 use IPC::Run qw(run);
 
 my $mode = shift;
@@ -113,21 +112,17 @@ sub file_verify {
 	}
 
 	if (&verify_hash($file, $meta{md5})) {
-		my $time = DateTime->now;
-		system("setfattr --restore=- <<EOF
-# file: $file
-user.rk.state=\"V\"
-user.rk.vtime=\"$time\"
-EOF
-");
+		my $script = sprintf(
+			qq(# file: $file\nuser.rk.state="V"\nuser.rk.vtime="%s"),
+			DateTime->now);
+
+		run [ 'setfattr', '--restore=-' ], \$script or die;
 		print "V $file\n";
 	}
 	else {
-		system("setfattr --restore=- <<EOF
-# file: $file
-user.rk.state=\"X\"
-EOF
-");
+		my $script = qq(# file: $file\nuser.rk.state="X");
+
+		run [ 'setfattr', '--restore=-' ], \$script or die;
 		print "X $file\n";
 	}
 }
@@ -148,12 +143,13 @@ sub file_all {
 sub file_remove {
     my ($file) = @_;
 
-	my $sq = shell_quote($file);
+	my $out;
+	my $err;
 
-    system("setfattr --remove=user.rk.md5   $sq >/dev/null 2>&1");
-    system("setfattr --remove=user.rk.htime $sq >/dev/null 2>&1");
-    system("setfattr --remove=user.rk.state $sq >/dev/null 2>&1");
-    system("setfattr --remove=user.rk.vtime $sq >/dev/null 2>&1");
+	run [ 'setfattr', '--remove=user.rk.md5'  , $file ], \undef, \$out, \$err;
+	run [ 'setfattr', '--remove=user.rk.htime', $file ], \undef, \$out, \$err;
+	run [ 'setfattr', '--remove=user.rk.state', $file ], \undef, \$out, \$err;
+	run [ 'setfattr', '--remove=user.rk.vtime', $file ], \undef, \$out, \$err;
 
 	print "  $file\n";
 }
@@ -182,13 +178,12 @@ sub file_export {
 # Store the supplied hash into a file's metadata
 sub store_hash {
     my ($file, $hash) = @_;
-    my $time = DateTime->now; # This is UTC
-    system("setfattr --restore=- <<EOF
-# file: $file
-user.rk.md5=\"$hash\"
-user.rk.htime=\"$time\"
-EOF
-");
+
+	my $script = sprintf(
+		qq(# file: $file\nuser.rk.md5="$hash"\nuser.rk.htime="%s"),
+		DateTime->now); # This is definitely UTC
+
+	run [ 'setfattr', '--restore=-' ], \$script or die;
 }
 
 ################################################################################
