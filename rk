@@ -71,7 +71,7 @@ sub item_process {
 	}
 
 	if ($no_follow_symlinks) {
-		print "L $item\n";
+		print_status($item, 'L');
 		return;
 	}
 
@@ -90,11 +90,11 @@ sub file_new {
 
 	if (not defined $meta{md5}) {
 		&hash_and_store($file);
-		print "? $file\n";
+		print_status($file, '?');
 		return;
 	}
 
-	printf "%s $file\n", $meta{state} // '?';
+	print_status($file, $meta{state} // '?');
 	return;
 }
 
@@ -107,23 +107,26 @@ sub file_verify {
 
 	unless (defined $meta{md5}) {
 		# No existing hash - skip file
-		print "  $file\n";
+		print_status($file, ' ');
 		return;
 	}
 
 	if (&verify_hash($file, $meta{md5})) {
 		my $script = sprintf(
-			qq(# file: $file\nuser.rk.state="V"\nuser.rk.vtime="%s"),
+			qq(# file: %s\nuser.rk.state="V"\nuser.rk.vtime="%s"),
+			setfattr_restore_filename($file), # Handle newlines in filenames
 			DateTime->now);
 
 		run [ 'setfattr', '--restore=-' ], \$script or die;
-		print "V $file\n";
+		print_status($file, 'V');
 	}
 	else {
-		my $script = qq(# file: $file\nuser.rk.state="X");
+		my $script = sprintf(
+			qq(# file: %s\nuser.rk.state="X"),
+			setfattr_restore_filename($file)); # Handle newlines in filenames
 
 		run [ 'setfattr', '--restore=-' ], \$script or die;
-		print "X $file\n";
+		print_status($file, 'X');
 	}
 }
 
@@ -151,7 +154,7 @@ sub file_remove {
 	run [ 'setfattr', '--remove=user.rk.state', $file ], \undef, \$out, \$err;
 	run [ 'setfattr', '--remove=user.rk.vtime', $file ], \undef, \$out, \$err;
 
-	print "  $file\n";
+	print_status($file, ' ');
 }
 
 ################################################################################
@@ -161,18 +164,42 @@ sub file_export {
 	my $size = -s $file;
 
 	if ($no_follow_symlinks) {
-		printf("%10u  llllllllllllllllllllllllllllllll  $file\n", $size);
+		printf(
+			"%10u  llllllllllllllllllllllllllllllll  %s\n",
+			$size,
+			&filename_for_output($file));
 		return;
 	}
 
 	my %meta = &meta_get($file);
 
 	my $stored  =  $meta{md5} // '????????????????????????????????';
-	printf("%10u  $stored  $file\n", $size);
+	printf(
+		"%10u  %s  %s\n",
+		$size,
+		$stored,
+		&filename_for_output($file));
 }
 
 ################################################################################
 # HELPERS
+
+sub setfattr_restore_filename {
+	return $_[0] =~s/\n/\\012/gr;
+}
+
+sub filename_for_output {
+	return $_[0] =~ s/\n/\\n/gr;
+}
+
+sub print_status {
+    my ($file, $status) = @_;
+
+	printf(
+		"%s %s\n",
+		$status,
+		&filename_for_output($file));
+}
 
 ################################################################################
 # Store the supplied hash into a file's metadata
@@ -180,7 +207,8 @@ sub store_hash {
     my ($file, $hash) = @_;
 
 	my $script = sprintf(
-		qq(# file: $file\nuser.rk.md5="$hash"\nuser.rk.htime="%s"),
+		qq(# file: %s\nuser.rk.md5="$hash"\nuser.rk.htime="%s"),
+		$file =~ s/\n/\\012/gr, # Handle newlines in filenames
 		DateTime->now); # This is definitely UTC
 
 	run [ 'setfattr', '--restore=-' ], \$script or die;
@@ -209,9 +237,9 @@ sub hash_content {
 	my $out;
 	run [ 'md5sum', $file ], \undef, \$out or die;
 
-	$out =~ /^[\da-f]{32}  / or die 'Bad md5sum output!';
+	$out =~ /^\\?([\da-f]{32})  / or die 'Bad md5sum output!';
 
-	return substr($out, 0, 32);
+	return $1;
 }
 
 ################################################################################
