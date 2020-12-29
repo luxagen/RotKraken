@@ -78,7 +78,7 @@ sub file_new {
 
 	if (not defined $meta{md5}) {
 		&hash_and_store($file);
-		return print_status($file, '?');
+		return print_status($file, 'N');
 	}
 
 	return print_status($file, $meta{state} // '?');
