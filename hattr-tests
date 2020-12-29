@@ -20,9 +20,9 @@ my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
 my $h2 = '437bba8e0bf58337674f4539e75186ac';
 my $h3 = '781e5e245d69b566979b86e28d23f2c7';
 
-my $f1 = "horrible1-\'\".testfile";
-my $f2 = "horrible2-\'\".testfile";
-my $f3 = "horrible3-\'\".testfile";
+my $f1 = "horrible1-\'\"\`.testfile";
+my $f2 = "horrible2-\'\"\`.testfile";
+my $f3 = "horrible3-\'\"\`.testfile";
 
 ################################################################################
 # Testing program
