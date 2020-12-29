@@ -225,11 +225,10 @@ sub hash_content {
 sub meta_get() {
     my ($file) = @_;
 
-	$file = shell_quote($file);
+	my $out;
+	run [ 'getfattr', '-d', $file ], \undef, \$out or die;
 
-    my $dump=`getfattr -d $file`;
-
-    open my $fh, '<', \$dump;
+    open my $fh, '<', \$out;
 
     my %fields;
     while (<$fh>) {
