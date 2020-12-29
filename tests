@@ -55,7 +55,7 @@ sub test_nx() {
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ("$base/$f1")), "? $base/$p1\n");
+	&is(&invoke('n', ("$base/$f1")), "N $base/$p1\n");
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -92,7 +92,7 @@ sub test_nv() {
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ("$base/$f1")), "? $base/$p1\n");
+	&is(&invoke('n', ("$base/$f1")), "N $base/$p1\n");
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -134,7 +134,7 @@ sub test_a() {
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ("$base/$f1")), "? $base/$p1\n");
+	&is(&invoke('a', ("$base/$f1")), "N $base/$p1\n");
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -151,7 +151,7 @@ sub test_a() {
 	sleep(1); # Make sure timestamp changes
 	&is(
 		&invoke('a', ("$base/$f1", "$base/$f2")),
-		"X $base/$p1\n? $base/$p2\n");
+		"X $base/$p1\nN $base/$p2\n");
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,3);
 	&is($meta{md5},$h1);
@@ -178,7 +178,7 @@ sub test_e {
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ("$base/$f1")), "? $base/$p1\n");
+	&is(&invoke('a', ("$base/$f1")), "N $base/$p1\n");
 	%meta = &meta_get("$base/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -207,7 +207,7 @@ sub test_l {
 	%meta = &meta_get("$base/$f2");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ("$base/$f2")), "? $base/$p2\n");
+	&is(&invoke('n', ("$base/$f2")), "N $base/$p2\n");
 	%meta = &meta_get("$base/$f2");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -236,11 +236,11 @@ sub test_r() {
 	&clobber_file("$base/dir1/dir3/$f3", $v3);
 
 	my @expected = sort(
-		"? $base/dir1/dir2/$p1",
-		"? $base/dir1/dir3/$p1",
-		"? $base/dir1/$p1"     ,
-		"? $base/dir1/dir2/$p2",
-		"? $base/dir1/dir3/$p3");
+		"N $base/dir1/dir2/$p1",
+		"N $base/dir1/dir3/$p1",
+		"N $base/dir1/$p1"     ,
+		"N $base/dir1/dir2/$p2",
+		"N $base/dir1/dir3/$p3");
 
 	my @got = sort(
 		split(/\n/, &invoke('n', "$base/dir1")));
