@@ -28,7 +28,8 @@ my $mode = shift;
 
 die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[lnvaxe]$/);
 
-my $no_follow_symlinks = 0;
+my $no_follow_file_symlinks = 1;
+my $no_follow_dir_symlinks = 1;
 
 foreach my $item (@ARGV) {
 	die "Path '$item' not found" unless -e $item;
@@ -47,6 +48,8 @@ sub item_process {
     my ($item,$mode) = @_;
 
 	if (-d $item) {
+		return if (-l $item  and  $no_follow_dir_symlinks);
+
 		opendir(my $handle, $item) or die "Cannot open directory '$!'";
 		my @list = readdir($handle);
 
@@ -60,9 +63,9 @@ sub item_process {
 		return;
 	}
 
+	return if (-l $item  and  $no_follow_file_symlinks);
 	return &file_remove($item) if ($mode =~ m/-x/);
 	return &file_export($item) if ($mode =~ m/-e/);
-	return print_status($item, 'L') if ($no_follow_symlinks);
 	#return &file_list  ($item) if ($mode =~ m/-l/);
 	return &file_new   ($item) if ($mode =~ m/-n/);
 	return &file_verify($item) if ($mode =~ m/-v/);
@@ -151,15 +154,6 @@ sub file_remove {
 sub file_export {
     my ($file) = @_;
 	my $size = -s $file;
-
-	if ($no_follow_symlinks) {
-		printf(
-			"%10u  llllllllllllllllllllllllllllllll  %s\n",
-			$size,
-			&filename_for_output($file));
-
-		return;
-	}
 
 	my $m = &meta_get($file);
 	return unless defined $m;
