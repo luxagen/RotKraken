@@ -6,7 +6,6 @@ use warnings;
 use Test::More qw(no_plan); # for the is() and isnt() functions
 use IPC::Run qw(run);
 use File::Path qw(make_path rmtree);
-use String::ShellQuote qw(shell_quote);
 use FindBin;
 my $testee = "$FindBin::Bin/rk";
 
@@ -283,8 +282,5 @@ sub invoke {
 
 sub clobber_file {
 	my ($file, $content) = @_;
-
-	$file = shell_quote($file);
-
-    system("echo -n '$content' > $file");	
+	run [ 'echo', '-n', $content ], '>', $file or die;
 }
