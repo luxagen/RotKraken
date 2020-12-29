@@ -60,25 +60,13 @@ sub item_process {
 		return;
 	}
 
-	if ($mode =~ m/-x/) {
-		&file_remove($item);
-		return;
-	}
-
-	if ($mode =~ m/-e/) {
-		&file_export($item);
-		return;
-	}
-
-	if ($no_follow_symlinks) {
-		print_status($item, 'L');
-		return;
-	}
-
-	#&file_list  ($item) if ($mode =~ m/-l/);
-	&file_new   ($item) if ($mode =~ m/-n/);
-	&file_verify($item) if ($mode =~ m/-v/);
-	&file_all   ($item) if ($mode =~ m/-a/);
+	return &file_remove($item) if ($mode =~ m/-x/);
+	return &file_export($item) if ($mode =~ m/-e/);
+	return print_status($item, 'L') if ($no_follow_symlinks);
+	#return &file_list  ($item) if ($mode =~ m/-l/);
+	return &file_new   ($item) if ($mode =~ m/-n/);
+	return &file_verify($item) if ($mode =~ m/-v/);
+	return &file_all   ($item) if ($mode =~ m/-a/);
 }
 
 ################################################################################
@@ -90,12 +78,10 @@ sub file_new {
 
 	if (not defined $meta{md5}) {
 		&hash_and_store($file);
-		print_status($file, '?');
-		return;
+		return print_status($file, '?');
 	}
 
-	print_status($file, $meta{state} // '?');
-	return;
+	return print_status($file, $meta{state} // '?');
 }
 
 ################################################################################
@@ -105,11 +91,7 @@ sub file_verify {
 
 	my %meta = &meta_get($file);
 
-	unless (defined $meta{md5}) {
-		# No existing hash - skip file
-		print_status($file, ' ');
-		return;
-	}
+	return print_status($file, ' ') unless (defined $meta{md5}); # No existing hash? Skip file
 
 	if (&verify_hash($file, $meta{md5})) {
 		my $script = sprintf(
@@ -168,6 +150,7 @@ sub file_export {
 			"%10u  llllllllllllllllllllllllllllllll  %s\n",
 			$size,
 			&filename_for_output($file));
+
 		return;
 	}
 
