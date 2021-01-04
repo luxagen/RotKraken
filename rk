@@ -2,14 +2,11 @@
 
 ################################################################################
 # Mode options
-# -l    Default: Print some status line
-# -n    Write new metadata where it doesn't exist
-# -v    Verify metadata where it exists
-# -a    Combination -n & -v
-# -x    Delete all metadata.
-# -i    (import)
-# -e    (export)
-# TODO  option to disable symlink following
+# -x    Clear own metadata from extended attributes
+# -e    Export hash log to stdout in the same format as `md5deep -zl`
+# -n    Initial-hash files that are missing metadata
+# -v    Verify files with metadata
+# -a    Combination of -n & -v
 
 ################################################################################
 # Output: status column
@@ -26,8 +23,9 @@ use IPC::Run qw(run);
 
 my $mode = shift;
 
-die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[lnvaxe]$/);
+die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[nvaxe]$/);
 
+my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
 my $no_follow_dir_symlinks = 1;
 
@@ -48,6 +46,7 @@ sub item_process {
     my ($item,$mode) = @_;
 
 	if (-d $item) {
+		return if ($no_recurse);
 		return if (-l $item  and  $no_follow_dir_symlinks);
 
 		opendir(my $handle, $item) or die "Cannot open directory '$!'";
@@ -66,7 +65,6 @@ sub item_process {
 	return if (-l $item  and  $no_follow_file_symlinks);
 	return &file_remove($item) if ($mode =~ m/-x/);
 	return &file_export($item) if ($mode =~ m/-e/);
-	#return &file_list  ($item) if ($mode =~ m/-l/);
 	return &file_new   ($item) if ($mode =~ m/-n/);
 	return &file_verify($item) if ($mode =~ m/-v/);
 	return &file_all   ($item) if ($mode =~ m/-a/);
