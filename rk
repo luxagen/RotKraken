@@ -4,9 +4,9 @@
 # Mode options
 # -x    Clear own metadata from extended attributes
 # -e    Export hash log to stdout in the same format as `md5deep -zl`
-# -n    Initial-hash files that are missing metadata
-# -v    Verify files with metadata
-# -a    Combination of -n & -v
+# -i    Initialise files that are missing metadata
+# -v    Verify initialised files with metadata
+# -a    Combination of -i & -v
 
 ################################################################################
 # Output: status column
@@ -23,7 +23,7 @@ use IPC::Run qw(run);
 
 my $mode = shift;
 
-die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[nvaxe]$/);
+die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[ivaxe]$/);
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
@@ -65,14 +65,14 @@ sub item_process {
 	return if (-l $item  and  $no_follow_file_symlinks);
 	return &file_remove($item) if ($mode =~ m/-x/);
 	return &file_export($item) if ($mode =~ m/-e/);
-	return &file_new   ($item) if ($mode =~ m/-n/);
+	return &file_init  ($item) if ($mode =~ m/-i/);
 	return &file_verify($item) if ($mode =~ m/-v/);
 	return &file_all   ($item) if ($mode =~ m/-a/);
 }
 
 ################################################################################
 # Initial-hash the file if it hasn't already been done
-sub file_new {
+sub file_init {
     my ($file) = @_;
 
 	my $m = &meta_get($file);
@@ -127,7 +127,7 @@ sub file_all {
 	my %meta = %{$m};
 
 	return &file_verify($file) if (defined $meta{md5});
-	return &file_new($file);
+	return &file_init($file);
 }
 
 ################################################################################
