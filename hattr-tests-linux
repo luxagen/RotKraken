@@ -9,8 +9,6 @@ FSLIST='ext2 ext3 ext4 btrfs ntfs'
 
 ./tfs-create $FSLIST
 
-for fs in $FSLIST; do
-	./hattr-tests mnt/$fs
-done
+(cd mnt && ../hattr-tests $FSLIST)
 
 ./tfs-destroy
