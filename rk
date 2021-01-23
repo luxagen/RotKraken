@@ -10,6 +10,13 @@
 # -i    (import)
 # -e    (export)
 
+################################################################################
+# Output: status column
+#  		[space] no metadata
+# ?		initial-hashed but unverified
+# V		last verification passed
+# X		last verification failed
+
 use strict;
 use warnings;
 
@@ -41,13 +48,17 @@ sub mode_new {
     my ($file) = @_;
 
     my $stored = &get_stored_hash($file);
-    if (defined $stored) {
-        print "$file already has a hash: $stored -- Skipping\n";
-		return;
-    }
 
-	print "Creating a new hash for $file\n";
-	&hash_and_store($file);
+	if (not defined $stored) {
+		&hash_and_store($file);
+		print "? $file\n";
+		return;
+	}
+
+	my %meta = &get_meta($file);
+
+	printf "%s $file\n", $meta{state} // '?';
+	return;
 }
 
 ################################################################################
@@ -57,7 +68,11 @@ sub mode_verify {
 
 	my $stored = &get_stored_hash($file);
 
-	return unless (defined $stored); # No existing hash - skip file
+	unless (defined $stored) {
+		# No existing hash - skip file
+		print "  $file\n";
+		return;
+	}
 
 	if (&verify_hash($file, $stored)) {
 		my $time = DateTime->now;
@@ -66,7 +81,8 @@ sub mode_verify {
 user.rk.state=\"V\"
 user.rk.vtime=\"$time\"
 EOF
-			");
+");
+		print "V $file\n";
 	}
 	else {
 		system("setfattr --restore=- <<EOF
@@ -74,6 +90,7 @@ EOF
 user.rk.state=\"X\"
 EOF
 ");
+		print "X $file\n";
 	}
 }
 
@@ -96,6 +113,8 @@ sub mode_remove {
     system("setfattr --remove=user.rk.htime '$file' >/dev/null 2>&1");
     system("setfattr --remove=user.rk.state '$file' >/dev/null 2>&1");
     system("setfattr --remove=user.rk.vtime '$file' >/dev/null 2>&1");
+
+	print "  $file\n";
 }
 
 ################################################################################
@@ -148,3 +167,20 @@ sub get_stored_hash {
 }
 
 ################################################################################
+# Retrieve metadata from a file's extended attributes
+# TODO deduplicate with the version in the tests file
+sub get_meta() {
+    my ($file) = @_;
+
+    my $dump=`getfattr -d '$file'`;
+
+    open my $fh, '<', \$dump;
+
+    my %fields;
+    while (<$fh>) {
+        next unless m/^[\s]*user.rk.(md5|htime|state|vtime)="(.*)"[\s]*$/;
+        $fields{$1} = $2;
+    }
+
+    return %fields;
+}

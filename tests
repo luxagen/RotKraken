@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Test::More qw(no_plan); # for the is() and isnt() functions
+use IPC::Run qw(run);
 use FindBin;
 my $testee = "$FindBin::Bin/rk";
 
@@ -21,6 +22,12 @@ sub get_meta() {
     }
 
     return %fields;
+}
+
+sub invoke {
+	my ($file, $mode) = @_;
+	run [ $testee, "-$mode", $file ], ">", \my $out or die;
+	return $out;
 }
 
 # TODO:
@@ -51,6 +58,7 @@ sub test_nx() {
 	my $h2 = '437bba8e0bf58337674f4539e75186ac';
 	my $h3 = '781e5e245d69b566979b86e28d23f2c7';
 
+	my $out;
 	my %meta;
 	my $last_htime;
 
@@ -62,7 +70,8 @@ sub test_nx() {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("'$testee' -n '$file'");
+	$out = &invoke($file, 'n');
+	&ok($out =~ /^? (.*)\n$/ and $1 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
@@ -74,7 +83,8 @@ sub test_nx() {
     system("echo -n '$v2' > '$file'"); # Change content
 
 	sleep(1);
-	system("'$testee' -x '$file'");
+	$out = &invoke($file, 'x');
+	&ok($out =~ /^  (.*)\n$/ and $1 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
@@ -93,6 +103,7 @@ sub test_nv() {
 
 	my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
 
+	my $out;
 	my %meta;
 
 	############################################################################
@@ -103,12 +114,14 @@ sub test_nv() {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("'$testee' -v '$file'"); # Verify should no-op
+	$out = &invoke($file, 'v');
+	&ok($out =~ /^  (.*)\n$/ and $1 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("'$testee' -n '$file'");
+	$out = &invoke($file, 'n');
+	&ok($out =~ /^? (.*)\n$/ and $1 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
@@ -118,7 +131,8 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1);
-	system("'$testee' -v '$file'");
+	$out = &invoke($file, 'v');
+	&ok($out =~ /^V (.*)\n$/ and $1 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,4);
@@ -132,7 +146,8 @@ sub test_nv() {
     system("echo -n '$v2' > '$file'"); # Change content
 
 	sleep(1);
-	system("'$testee' -v '$file'");
+	$out = &invoke($file, 'v');
+	&ok($out =~ /^X (.*)\n$/ and $1 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,4);
@@ -159,6 +174,7 @@ sub test_a() {
 	my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
 	my $h2 = '437bba8e0bf58337674f4539e75186ac';
 
+	my $out;
 	my %meta;
 
 	############################################################################
@@ -169,7 +185,8 @@ sub test_a() {
 	%meta = &get_meta($file1);
 	&is(scalar keys %meta,0);
 
-	system("'$testee' -a '$file1'");
+	$out = &invoke($file1, 'a');
+	&ok($out =~ /^? (.*)\n$/ and $1 eq $file1);
 
 	%meta = &get_meta($file1);
 	&is(scalar keys %meta,2);
@@ -178,13 +195,22 @@ sub test_a() {
 
 	my $htime = $meta{htime};
 
-	sleep(1);
-
     system("echo -n '$v3' > '$file1'");  # Change content
     system("echo -n '$v2' > '$file2'");  # Write content
 
-	system("'$testee' -a '$file1'");
-	system("'$testee' -a '$file2'"); # TODO combine with previous
+	%meta = &get_meta($file2);
+	&is(scalar keys %meta,0);
+
+	sleep(1);
+	$out  =  &invoke($file1, 'a') . &invoke($file2, 'a'); # TODO one call
+
+    my @lines = split /^/,$out;
+    &is(scalar @lines,2);
+    foreach (@lines) {
+        die unless m/^(.?) (.*)$/;
+        &is($1,'X') if $2 eq $file1;
+        &is($1,'?') if $2 eq $file2;
+    }
 
 	%meta = &get_meta($file1);
 	&is(scalar keys %meta,3);
@@ -209,6 +235,7 @@ sub test_e {
 	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
 	my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
 
+	my $out;
 	my %meta;
 
 	############################################################################
@@ -219,19 +246,22 @@ sub test_e {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("'$testee' -e '$file'"); # TODO check output for ????
+	$out = &invoke($file, 'e');
+	&ok($out =~ /^\?{32} (.*)\n$/ and $1 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("'$testee' -a '$file'");
+	$out = &invoke($file, 'a');
+	&ok($out =~ /^([0-9a-f]{32}) (.*)\n$/ and $1 eq $h1 and $2 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-	system("'$testee' -e '$file'"); # TODO check output for $h1
+	$out = &invoke($file, 'e');
+	&ok($out =~ /^([0-9a-f]{32}) (.*)\n$/ and $1 eq $h1 and $2 eq $file);
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
