@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use DateTime qw(now);
+use String::ShellQuote qw(shell_quote);
 
 my $mode = shift;
 
@@ -145,10 +146,13 @@ sub file_all {
 # Remove all metadata from the file
 sub file_remove {
     my ($file) = @_;
-    system("setfattr --remove=user.rk.md5   '$file' >/dev/null 2>&1");
-    system("setfattr --remove=user.rk.htime '$file' >/dev/null 2>&1");
-    system("setfattr --remove=user.rk.state '$file' >/dev/null 2>&1");
-    system("setfattr --remove=user.rk.vtime '$file' >/dev/null 2>&1");
+
+	my $sq = shell_quote($file);
+
+    system("setfattr --remove=user.rk.md5   $sq >/dev/null 2>&1");
+    system("setfattr --remove=user.rk.htime $sq >/dev/null 2>&1");
+    system("setfattr --remove=user.rk.state $sq >/dev/null 2>&1");
+    system("setfattr --remove=user.rk.vtime $sq >/dev/null 2>&1");
 
 	print "  $file\n";
 }
@@ -203,7 +207,10 @@ sub verify_hash {
 # Hash the file and return the resulting hash
 sub hash_content {
     my ($file) = @_;
-    my $hash = `md5sum '$file' | cut -d ' ' -f 1`;
+
+	$file = shell_quote($file);
+
+    my $hash = `md5sum $file | cut -d ' ' -f 1`;
     chomp $hash;
     return $hash;
 }
@@ -212,7 +219,10 @@ sub hash_content {
 # Read back a hash from a file.
 sub get_stored_hash {
     my ($file) = @_;
-    my $hash = `getfattr -d '$file' | grep user.rk.md5 | sed 's/user.rk.md5="//' | sed 's/"\$//'`;
+
+	$file = shell_quote($file);
+
+    my $hash = `getfattr -d $file | grep user.rk.md5 | sed 's/user.rk.md5="//' | sed 's/"\$//'`;
     chomp $hash;
     return 32==length($hash) ? $hash : undef;
 }
@@ -223,7 +233,9 @@ sub get_stored_hash {
 sub meta_get() {
     my ($file) = @_;
 
-    my $dump=`getfattr -d '$file'`;
+	$file = shell_quote($file);
+
+    my $dump=`getfattr -d $file`;
 
     open my $fh, '<', \$dump;
 
