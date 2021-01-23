@@ -4,7 +4,6 @@
 # Mode options
 # -l    Default: Print some status line
 # -n    Write new metadata where it doesn't exist
-# -f    Write metadata regardless
 # -v    Verify metadata where it exists
 # -a    Combination -n & -v
 # -x    Delete all metadata.
@@ -19,14 +18,13 @@ use DateTime qw(now);
 my $mode = shift;
 my $file = shift;
 
-if (not defined $mode && $mode =~ m/^-[lnfvaxie]$/) {
+if (not defined $mode && $mode =~ m/^-[lnvaxie]$/) {
     print "Incorrect usage!\n";
     exit 1;
 }
 
 #&mode_list  ($file) if ($mode =~ m/-l/);
 &mode_new   ($file) if ($mode =~ m/-n/);
-&mode_force ($file) if ($mode =~ m/-f/);
 &mode_verify($file) if ($mode =~ m/-v/);
 &mode_all   ($file) if ($mode =~ m/-a/);
 &mode_remove($file) if ($mode =~ m/-x/);
@@ -50,12 +48,6 @@ sub mode_new {
 
 	print "Creating a new hash for $file\n";
 	&store_hash($file);
-}
-
-################################################################################
-# Initial-hash the file indiscriminately
-sub mode_force {
-	return &store_hash($file);
 }
 
 ################################################################################
