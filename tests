@@ -25,8 +25,8 @@ sub get_meta() {
 }
 
 sub invoke {
-	my ($file, $mode) = @_;
-	run [ $testee, "-$mode", $file ], ">", \my $out or die;
+	my ($mode, @files) = (@_);
+	run [ $testee, "-$mode", @files ], ">", \my $out or die;
 	return $out;
 }
 
@@ -78,7 +78,7 @@ sub test_nx() {
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($f1, 'n'), "? $f1\n");
+	&is(&invoke('n', ($f1)), "? $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -86,7 +86,7 @@ sub test_nx() {
 
 	my $htime = $meta{htime};
 
-	&is(&invoke($f1, 'n'), "? $f1\n");
+	&is(&invoke('n', ($f1)), "? $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -95,7 +95,7 @@ sub test_nx() {
 	&clobber_file($f1, $v2);
 
 	sleep(1);
-	&is(&invoke($f1, 'x'), "  $f1\n");
+	&is(&invoke('x', ($f1)), "  $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
@@ -110,11 +110,11 @@ sub test_nv() {
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($f1, 'v'), "  $f1\n");
+	&is(&invoke('v', ($f1)), "  $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($f1, 'n'), "? $f1\n");
+	&is(&invoke('n', ($f1)), "? $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -123,7 +123,7 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1);
-	&is(&invoke($f1, 'v'), "V $f1\n");
+	&is(&invoke('v', ($f1)), "V $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
@@ -136,7 +136,7 @@ sub test_nv() {
 	&clobber_file($f1, $v2);
 
 	sleep(1);
-	&is(&invoke($f1, 'v'), "X $f1\n");
+	&is(&invoke('v', ($f1)), "X $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
@@ -155,7 +155,7 @@ sub test_a() {
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($f1, 'a'), "? $f1\n");
+	&is(&invoke('a', ($f1)), "? $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -171,7 +171,7 @@ sub test_a() {
 
 	sleep(1);
 	&is(
-		&invoke($f1, 'a') . &invoke($f2, 'a'), # TODO one call
+		&invoke('a', ($f1, $f2)),
 		"X $f1\n? $f2\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,3);
@@ -194,17 +194,17 @@ sub test_e {
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($f1, 'e'), "        26  ????????????????????????????????  $f1\n");
+	&is(&invoke('e', ($f1)), "        26  ????????????????????????????????  $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($f1, 'a'), "? $f1\n");
+	&is(&invoke('a', ($f1)), "? $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-	&is(&invoke($f1, 'e'), "        26  $h1  $f1\n");
+	&is(&invoke('e', ($f1)), "        26  $h1  $f1\n");
 	%meta = &get_meta($f1);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -226,7 +226,7 @@ sub test_l {
 	%meta = &get_meta($f2);
 	&is(scalar keys %meta,0);
 
-	&is(&invoke($f2, 'n'), "? $f2\n");
+	&is(&invoke('n', ($f2)), "? $f2\n");
 	%meta = &get_meta($f2);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
