@@ -7,7 +7,7 @@ use Test::More qw(no_plan); # for the is() and isnt() functions
 use IPC::Run qw(run);
 use File::Path qw(make_path rmtree);
 use FindBin;
-my $testee = "$FindBin::Bin/hattr";
+my $testee = "$FindBin::Bin/rk";
 
 ################################################################################
 # Test constants
@@ -55,7 +55,7 @@ sub test_nx() {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('n', ("$base/$f1")), "N $base/$p1\n");
+	&is(&rk('n', ("$base/$f1")), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -63,7 +63,7 @@ sub test_nx() {
 
 	my $htime = $meta{htime};
 
-	&is(&hattr('n', ("$base/$f1")), "? $base/$p1\n");
+	&is(&rk('n', ("$base/$f1")), "? $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -72,7 +72,7 @@ sub test_nx() {
 	&clobber_file("$base/$f1", $v2);
 
 	sleep(1); # Make sure timestamp changes
-	&is(&hattr('x', ("$base/$f1")), "  $base/$p1\n");
+	&is(&rk('x', ("$base/$f1")), "  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
@@ -88,11 +88,11 @@ sub test_nv() {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('v', ("$base/$f1")), "  $base/$p1\n");
+	&is(&rk('v', ("$base/$f1")), "  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('n', ("$base/$f1")), "N $base/$p1\n");
+	&is(&rk('n', ("$base/$f1")), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -101,7 +101,7 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1); # Make sure timestamp changes
-	&is(&hattr('v', ("$base/$f1")), "V $base/$p1\n");
+	&is(&rk('v', ("$base/$f1")), "V $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
@@ -114,7 +114,7 @@ sub test_nv() {
 	&clobber_file("$base/$f1", $v2);
 
 	sleep(1); # Make sure timestamp changes
-	&is(&hattr('v', ("$base/$f1")), "X $base/$p1\n");
+	&is(&rk('v', ("$base/$f1")), "X $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
@@ -134,7 +134,7 @@ sub test_a() {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('a', ("$base/$f1")), "N $base/$p1\n");
+	&is(&rk('a', ("$base/$f1")), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -150,7 +150,7 @@ sub test_a() {
 
 	sleep(1); # Make sure timestamp changes
 	&is(
-		&hattr('a', ("$base/$f1", "$base/$f2")),
+		&rk('a', ("$base/$f1", "$base/$f2")),
 		"X $base/$p1\nN $base/$p2\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,3);
@@ -174,17 +174,17 @@ sub test_e {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('e', ("$base/$f1")), "        26  ????????????????????????????????  $base/$p1\n");
+	&is(&rk('e', ("$base/$f1")), "        26  ????????????????????????????????  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('a', ("$base/$f1")), "N $base/$p1\n");
+	&is(&rk('a', ("$base/$f1")), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
-	&is(&hattr('e', ("$base/$f1")), "        26  $h1  $base/$p1\n");
+	&is(&rk('e', ("$base/$f1")), "        26  $h1  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -207,7 +207,7 @@ sub test_l {
 	%meta = %{&meta_get("$base/$f2")};
 	&is(scalar keys %meta,0);
 
-	&is(&hattr('n', ("$base/$f2")), '');
+	&is(&rk('n', ("$base/$f2")), '');
 	%meta = %{&meta_get("$base/$f2")};
 	&is(scalar keys %meta,0);
 
@@ -246,7 +246,7 @@ sub test_r() {
 		"N $base/dir1/dir3/$p3");
 
 	my @got = sort(
-		split(/\n/, &hattr('n', "$base/dir1")));
+		split(/\n/, &rk('n', "$base/dir1")));
 
 	&is_deeply(\@got,\@expected);
 
@@ -266,7 +266,7 @@ sub meta_get() {
 
     my %fields;
     while (<$fh>) {
-        next unless m/^[\s]*user.hattr.(md5|htime|state|vtime)="(.*)"[\s]*$/;
+        next unless m/^[\s]*user.rk.(md5|htime|state|vtime)="(.*)"[\s]*$/;
         $fields{$1} = $2;
     }
 
@@ -283,7 +283,7 @@ sub meta_get() {
     return \%fields;
 }
 
-sub hattr {
+sub rk {
 	my ($mode, @files) = (@_);
 	run [ $testee, "-$mode", @files ], ">", \my $out or die;
 	return $out;
