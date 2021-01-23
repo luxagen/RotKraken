@@ -33,12 +33,12 @@ sub get_meta() {
 
 my $fs = shift;
 
-&test_nfx($fs.'/1 - name with a space.testfile');
-&test_nv ($fs.'/2 - name with a space.testfile');
-&test_a  ($fs.'/3 - name with a space.testfile');
-#&test_ie ($fs.'/4 - name with a space.testfile');
+&test_nx($fs.'/1 - name with a space.testfile');
+&test_nv($fs.'/2 - name with a space.testfile');
+&test_a ($fs.'/3 - name with a space.testfile');
+#&test_ie($fs.'/4 - name with a space.testfile');
 
-sub test_nfx() {
+sub test_nx() {
 	my ($file) = @_;
 
 	############################################################################
@@ -75,32 +75,10 @@ sub test_nfx() {
     system("echo '$v2' > '$file'"); # Change content
 
 	sleep(1);
-	system("'$testee' -f '$file'");
-
-	%meta = &get_meta($file);
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h2);
-	&ok($meta{htime} gt $last_htime); # TODO FORMAT CHECK
-
-	$last_htime = $meta{htime};
-
-	sleep(1);
 	system("'$testee' -x '$file'");
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
-
-    system("echo '$v3' > '$file'"); # Change content
-
-	sleep(1);
-	system("'$testee' -f '$file'");
-
-	%meta = &get_meta($file);
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h3);
-	&ok($meta{htime} gt $last_htime); # TODO FORMAT CHECK
-
-	$last_htime = $meta{htime};
 
     system("rm '$file'");
 }
@@ -126,12 +104,12 @@ sub test_nv() {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("./hattr -v '$file'"); # Verify should no-op
+	system("'$testee' -v '$file'"); # Verify should no-op
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("./hattr -n '$file'");
+	system("'$testee' -n '$file'");
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
@@ -141,7 +119,7 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1);
-	system("./hattr -v '$file'");
+	system("'$testee' -v '$file'");
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,4);
@@ -155,7 +133,7 @@ sub test_nv() {
     system("echo '$v2' > '$file'"); # Change content
 
 	sleep(1);
-	system("./hattr -v '$file'");
+	system("'$testee' -v '$file'");
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,4);
@@ -192,7 +170,7 @@ sub test_a() {
 	%meta = &get_meta($file1);
 	&is(scalar keys %meta,0);
 
-	system("./hattr -a '$file1'");
+	system("'$testee' -a '$file1'");
 
 	%meta = &get_meta($file1);
 	&is(scalar keys %meta,2);
@@ -206,8 +184,8 @@ sub test_a() {
     system("echo '$v3' > '$file1'");  # Change content
     system("echo '$v2' > '$file2'");  # Write content
 
-	system("./hattr -a '$file1'");
-	system("./hattr -a '$file2'"); # TODO combine with previous
+	system("'$testee' -a '$file1'");
+	system("'$testee' -a '$file2'"); # TODO combine with previous
 
 	%meta = &get_meta($file1);
 	&is(scalar keys %meta,3);
@@ -242,19 +220,19 @@ sub test_ie {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("./hattr -e '$file'"); # TODO check output for ????
+	system("'$testee' -e '$file'"); # TODO check output for ????
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("./hattr -i '$file' '$h1'");
+	system("'$testee' -i '$file' '$h1'");
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-	system("./hattr -e '$file'"); # TODO check output for $h1
+	system("'$testee' -e '$file'"); # TODO check output for $h1
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
