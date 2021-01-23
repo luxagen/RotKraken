@@ -19,10 +19,11 @@ my $h1 = 'c3fcd3d76192e4007dfb496cca67e13b';
 my $h2 = '437bba8e0bf58337674f4539e75186ac';
 my $h3 = '781e5e245d69b566979b86e28d23f2c7';
 
+my $f1 = "1 with space.testfile";
+my $f2 = "2 with space.testfile";
+my $f3 = "3 with space.testfile";
+
 my $fs = shift;
-my $lt1 = "1 with space.testfile";
-my $f1 = "$fs/$lt1";
-my $f2 = "$fs/2 with space.testfile";
 
 ################################################################################
 # Testing program
@@ -40,49 +41,49 @@ exit 0;
 sub test_nx() {
 	my %meta;
 
-	&clobber_file($f1, $v1);
+	&clobber_file("$fs/$f1", $v1);
 
-	%meta = &meta_get($f1);
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ($f1)), "? $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('n', ("$fs/$f1")), "? $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
 	my $htime = $meta{htime};
 
-	&is(&invoke('n', ($f1)), "? $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('n', ("$fs/$f1")), "? $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
 
-	&clobber_file($f1, $v2);
+	&clobber_file("$fs/$f1", $v2);
 
 	sleep(1);
-	&is(&invoke('x', ($f1)), "  $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('x', ("$fs/$f1")), "  $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-    unlink $f1;
+    unlink "$fs/$f1";
 }
 
 sub test_nv() {
 	my %meta;
 
-	&clobber_file($f1, $v1);
+	&clobber_file("$fs/$f1", $v1);
 
-	%meta = &meta_get($f1);
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('v', ($f1)), "  $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('v', ("$fs/$f1")), "  $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ($f1)), "? $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('n', ("$fs/$f1")), "? $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
@@ -90,8 +91,8 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1);
-	&is(&invoke('v', ($f1)), "V $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('v', ("$fs/$f1")), "V $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
@@ -100,113 +101,113 @@ sub test_nv() {
 
 	my $last_vtime = $meta{vtime};
 
-	&clobber_file($f1, $v2);
+	&clobber_file("$fs/$f1", $v2);
 
 	sleep(1);
-	&is(&invoke('v', ($f1)), "X $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('v', ("$fs/$f1")), "X $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,4);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
 	&is($meta{state},'X');
 	&ok($meta{vtime} eq $last_vtime); # TODO FORMAT CHECK
 
-    unlink $f1;
+    unlink "$fs/$f1";
 }
 
 sub test_a() {
 	my %meta;
 
-	&clobber_file($f1, $v1);
+	&clobber_file("$fs/$f1", $v1);
 
-	%meta = &meta_get($f1);
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ($f1)), "? $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('a', ("$fs/$f1")), "? $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
 	my $htime = $meta{htime};
 
-	&clobber_file($f1, $v3);
-	&clobber_file($f2, $v2);
+	&clobber_file("$fs/$f1", $v3);
+	&clobber_file("$fs/$f2", $v2);
 
-	%meta = &meta_get($f2);
+	%meta = &meta_get("$fs/$f2");
 	&is(scalar keys %meta,0);
 
 	sleep(1);
 	&is(
-		&invoke('a', ($f1, $f2)),
-		"X $f1\n? $f2\n");
-	%meta = &meta_get($f1);
+		&invoke('a', ("$fs/$f1", "$fs/$f2")),
+		"X $fs/$f1\n? $fs/$f2\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,3);
 	&is($meta{md5},$h1);
 	&is($meta{htime},$htime); # TODO FORMAT CHECK
 	&is($meta{state},'X');
-	%meta = &meta_get($f2);
+	%meta = &meta_get("$fs/$f2");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h2);
 	&ok($meta{htime} gt $htime); # TODO FORMAT CHECK
 
-    unlink $f1, $f2;
+    unlink "$fs/$f1", "$fs/$f2";
 }
 
 sub test_e {
 	my %meta;
 
-	&clobber_file($f1, $v1);
+	&clobber_file("$fs/$f1", $v1);
 
-	%meta = &meta_get($f1);
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('e', ($f1)), "        26  ????????????????????????????????  $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('e', ("$fs/$f1")), "        26  ????????????????????????????????  $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ($f1)), "? $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('a', ("$fs/$f1")), "? $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-	&is(&invoke('e', ($f1)), "        26  $h1  $f1\n");
-	%meta = &meta_get($f1);
+	&is(&invoke('e', ("$fs/$f1")), "        26  $h1  $fs/$f1\n");
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
-    unlink $f1;
+    unlink "$fs/$f1";
 }
 
 sub test_l {
 	my %meta;
 
-	&clobber_file($f1, $v1);
+	&clobber_file("$fs/$f1", $v1);
 
-	%meta = &meta_get($f1);
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,0);
 
-	symlink($lt1, $f2) or die "Couldn't create symlink!";
+	symlink($f1, "$fs/$f2") or die "Couldn't create symlink!";
 
-	%meta = &meta_get($f2);
+	%meta = &meta_get("$fs/$f2");
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('n', ($f2)), "? $f2\n");
-	%meta = &meta_get($f2);
+	&is(&invoke('n', ("$fs/$f2")), "? $fs/$f2\n");
+	%meta = &meta_get("$fs/$f2");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
 
 	my $htime = $meta{htime};
 
-	%meta = &meta_get($f1);
+	%meta = &meta_get("$fs/$f1");
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
 
-	unlink $f1,$f2;
+	unlink "$fs/$f1","$fs/$f2";
 }
 
 ################################################################################
