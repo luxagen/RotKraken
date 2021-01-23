@@ -5,6 +5,7 @@ use warnings;
 
 use Test::More qw(no_plan); # for the is() and isnt() functions
 use IPC::Run qw(run);
+use File::Path qw(make_path rmtree);
 use FindBin;
 my $testee = "$FindBin::Bin/hattr";
 
@@ -33,6 +34,7 @@ my $fs = shift;
 &test_a ();
 &test_e ();
 &test_l ();
+&test_r ();
 
 exit 0;
 
@@ -208,6 +210,32 @@ sub test_l {
 	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
 
 	unlink "$fs/$f1","$fs/$f2";
+}
+
+sub test_r() {
+	my %meta;
+
+	make_path("$fs/dir1/dir2","$fs/dir1/dir3");
+
+	&clobber_file("$fs/dir1/$f1", $v1);
+	&clobber_file("$fs/dir1/dir2/$f1", $v1);
+	&clobber_file("$fs/dir1/dir2/$f2", $v2);
+	&clobber_file("$fs/dir1/dir3/$f1", $v1);
+	&clobber_file("$fs/dir1/dir3/$f3", $v3);
+
+	my @expected = sort(
+		"? $fs/dir1/dir2/$f1",
+		"? $fs/dir1/dir3/$f1",
+		"? $fs/dir1/$f1"     ,
+		"? $fs/dir1/dir2/$f2",
+		"? $fs/dir1/dir3/$f3");
+
+	my @got = sort(
+		split(/\n/, &hattr('n', "$fs/dir1")));
+
+	&is_deeply(\@got,\@expected);
+
+    rmtree "$fs/dir1";
 }
 
 ################################################################################

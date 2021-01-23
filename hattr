@@ -31,7 +31,7 @@ if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
 
 foreach my $item (@ARGV) {
 	die "Path '$item' not found" if (not -e $item);
-	die "Path '$item' is not a file" if (not -f $item); # TODO support dirs too
+	die "Path '$item' is not a file" if (not (-f $item or -d $item));
 }
 
 foreach my $item (@ARGV) {
@@ -44,6 +44,20 @@ exit(0);
 # Initial-hash the file if it hasn't already been done
 sub item_process {
     my ($item,$mode) = @_;
+
+	if (-d $item) {
+		opendir(my $handle, $item) or die "Cannot open directory '$!'";
+		my @list = readdir($handle);
+
+		foreach my $nested (@list) {
+			next if $nested eq "." or $nested eq "..";
+			&item_process("$item/$nested", $mode);
+		}
+
+		closedir($handle);
+		
+		return;
+	}
 
 	#&file_list  ($item) if ($mode =~ m/-l/);
 	&file_new   ($item)     if ($mode =~ m/-n/);
