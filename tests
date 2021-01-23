@@ -28,7 +28,6 @@ sub get_meta() {
 # -v    Verify metadata where it exists
 # -a    Combination -n & -v
 # -x    Delete all metadata. - THIS NEEDS RETESTING WITH ALL 4 KEYS!
-# -i    (import)
 # -e    (export)
 
 my $fs = shift;
@@ -36,7 +35,7 @@ my $fs = shift;
 &test_nx($fs.'/1 - name with a space.testfile');
 &test_nv($fs.'/2 - name with a space.testfile');
 &test_a ($fs.'/3 - name with a space.testfile');
-#&test_ie($fs.'/4 - name with a space.testfile');
+#&test_e ($fs.'/4 - name with a space.testfile');
 
 sub test_nx() {
 	my ($file) = @_;
@@ -201,14 +200,14 @@ sub test_a() {
     system("rm '$file1' '$file2'");
 }
 
-sub test_ie {
+sub test_e {
 	my ($file) = @_;
 
 	############################################################################
 	## Constants/variables
 
 	my $v1 = 'abcdefghijklmnopqrstuvwxyz';
-	my $h1 = 'badbadbadbadbadbadbadbadbadbaaad';
+	my $h1 = 'e302f9ecd2d189fa80aac1c3392e9b9c';
 
 	my %meta;
 
@@ -225,7 +224,7 @@ sub test_ie {
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,0);
 
-	system("'$testee' -i '$file' '$h1'");
+	system("'$testee' -a '$file'");
 
 	%meta = &get_meta($file);
 	&is(scalar keys %meta,2);
@@ -238,8 +237,6 @@ sub test_ie {
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19); # TODO FORMAT CHECK
-
-	# check output
 
     system("rm '$file'");
 }
