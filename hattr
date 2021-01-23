@@ -18,18 +18,17 @@ use DateTime qw(now);
 my $mode = shift;
 my $file = shift;
 
-if (not defined $mode && $mode =~ m/^-[lnvaxie]$/) {
+if (not defined $mode && $mode =~ m/^-[lnvaxe]$/) {
     print "Incorrect usage!\n";
     exit 1;
 }
 
 #&mode_list  ($file) if ($mode =~ m/-l/);
-&mode_new   ($file) if ($mode =~ m/-n/);
-&mode_verify($file) if ($mode =~ m/-v/);
-&mode_all   ($file) if ($mode =~ m/-a/);
-&mode_remove($file) if ($mode =~ m/-x/);
-#&mode_import($file) if ($mode =~ m/-i/);
-#&mode_export($file) if ($mode =~ m/-e/);
+&mode_new   ($file)     if ($mode =~ m/-n/);
+&mode_verify($file)     if ($mode =~ m/-v/);
+&mode_all   ($file)     if ($mode =~ m/-a/);
+&mode_remove($file)     if ($mode =~ m/-x/);
+#&mode_export($file)     if ($mode =~ m/-e/);
 
 ################################################################################
 # Main program loop.
