@@ -100,7 +100,7 @@ sub file_verify {
 
 	if (&verify_hash($file, $meta{md5})) {
 		my $script = sprintf(
-			qq(# file: %s\nuser.hattr.state="V"\nuser.hattr.vtime="%s"),
+			qq(# file: %s\nuser.rk.state="V"\nuser.rk.vtime="%s"),
 			setfattr_restore_filename($file), # Handle newlines in filenames
 			DateTime->now);
 
@@ -109,7 +109,7 @@ sub file_verify {
 	}
 	else {
 		my $script = sprintf(
-			qq(# file: %s\nuser.hattr.state="X"),
+			qq(# file: %s\nuser.rk.state="X"),
 			setfattr_restore_filename($file)); # Handle newlines in filenames
 
 		run [ 'setfattr', '--restore=-' ], \$script;
@@ -139,10 +139,10 @@ sub file_remove {
 	my $err;
 
 	# Discard stderr and ignore return codes to make a best effort at xattr deletion
-	run [ 'setfattr', '--remove=user.hattr.md5'  , $file ], \undef, \$out, \$err;
-	run [ 'setfattr', '--remove=user.hattr.htime', $file ], \undef, \$out, \$err;
-	run [ 'setfattr', '--remove=user.hattr.state', $file ], \undef, \$out, \$err;
-	run [ 'setfattr', '--remove=user.hattr.vtime', $file ], \undef, \$out, \$err;
+	run [ 'setfattr', '--remove=user.rk.md5'  , $file ], \undef, \$out, \$err;
+	run [ 'setfattr', '--remove=user.rk.htime', $file ], \undef, \$out, \$err;
+	run [ 'setfattr', '--remove=user.rk.state', $file ], \undef, \$out, \$err;
+	run [ 'setfattr', '--remove=user.rk.vtime', $file ], \undef, \$out, \$err;
 
 	print_status($file, ' ');
 }
@@ -190,7 +190,7 @@ sub store_hash {
     my ($file, $hash) = @_;
 
 	my $script = sprintf(
-		qq(# file: %s\nuser.hattr.md5="$hash"\nuser.hattr.htime="%s"),
+		qq(# file: %s\nuser.rk.md5="$hash"\nuser.rk.htime="%s"),
 		$file =~ s/\n/\\012/gr, # Handle newlines in filenames
 		DateTime->now); # This is definitely UTC
 
@@ -235,7 +235,7 @@ sub meta_get() {
 
     my %fields;
     while (<$fh>) {
-        next unless m/^[\s]*user.hattr.(md5|htime|state|vtime)="(.*)"[\s]*$/;
+        next unless m/^[\s]*user.rk.(md5|htime|state|vtime)="(.*)"[\s]*$/;
         $fields{$1} = $2;
     }
 
