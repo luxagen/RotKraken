@@ -8,33 +8,6 @@ use IPC::Run qw(run);
 use FindBin;
 my $testee = "$FindBin::Bin/rk";
 
-sub meta_get() {
-    my ($file) = @_;
-
-    my $dump=`getfattr -d '$file'`;
-
-    open my $fh, '<', \$dump;
-
-    my %fields;
-    while (<$fh>) {
-        next unless m/^[\s]*user.rk.(md5|htime|state|vtime)="(.*)"[\s]*$/;
-        $fields{$1} = $2;
-    }
-
-    return %fields;
-}
-
-sub invoke {
-	my ($mode, @files) = (@_);
-	run [ $testee, "-$mode", @files ], ">", \my $out or die;
-	return $out;
-}
-
-sub clobber_file {
-	my ($file, $content) = @_;
-    system("echo -n '$content' > '$file'");	
-}
-
 ################################################################################
 # Test constants
 
@@ -52,13 +25,7 @@ my $f1 = "$fs/$lt1";
 my $f2 = "$fs/2 with space.testfile";
 
 ################################################################################
-
-# TODO:
-# -l    Default: Print some status line
-# -v    Verify metadata where it exists
-# -a    Combination -n & -v
-# -x    Delete all metadata. - THIS NEEDS RETESTING WITH ALL 4 KEYS!
-# -e    (export)
+# Testing program
 
 &test_nx();
 &test_nv();
@@ -240,4 +207,34 @@ sub test_l {
 	&ok($meta{htime} eq $htime); # TODO FORMAT CHECK
 
 	unlink $f1,$f2;
+}
+
+################################################################################
+# Test helpers
+
+sub meta_get() {
+    my ($file) = @_;
+
+    my $dump=`getfattr -d '$file'`;
+
+    open my $fh, '<', \$dump;
+
+    my %fields;
+    while (<$fh>) {
+        next unless m/^[\s]*user.rk.(md5|htime|state|vtime)="(.*)"[\s]*$/;
+        $fields{$1} = $2;
+    }
+
+    return %fields;
+}
+
+sub invoke {
+	my ($mode, @files) = (@_);
+	run [ $testee, "-$mode", @files ], ">", \my $out or die;
+	return $out;
+}
+
+sub clobber_file {
+	my ($file, $content) = @_;
+    system("echo -n '$content' > '$file'");	
 }
