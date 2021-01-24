@@ -19,8 +19,8 @@ use strict;
 use warnings;
 
 use DateTime qw(now);
-use IPC::Run qw(run);
 use File::ExtAttr ':all';
+use Digest::MD5::File qw(file_md5_hex);
 
 my $mode = shift;
 
@@ -201,10 +201,7 @@ sub verify_hash {
 # Hash the file and return the resulting hash
 sub hash_content {
     my ($file) = @_;
-
-	my $out;
-	return $1 if (run [ 'md5sum', $file ], \undef, \$out  and  $out =~ /^\\?([\da-f]{32})  /);
-	return undef; # Some error occurred
+	return &file_md5_hex($file);
 }
 
 ################################################################################
