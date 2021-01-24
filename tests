@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use File::ExtAttr ':all';
 use Test::More qw(no_plan); # for the is() and isnt() functions
 use IPC::Run qw(run);
 use File::Path qw(make_path rmtree);
@@ -260,15 +261,13 @@ sub meta_get() {
     my ($file) = @_;
 
 	my $out;
-	run [ 'getfattr', '-d', $file ], \undef, \$out or return undef;
 
-    open my $fh, '<', \$out;
+	my %fields;
 
-    my %fields;
-    while (<$fh>) {
-        next unless m/^[\s]*user.rk.(md5|htime|state|vtime)="(.*)"[\s]*$/;
-        $fields{$1} = $2;
-    }
+	foreach ('md5', 'htime', 'state', 'vtime') {
+		my $value = &getfattr($file, "rk.$_");
+		$fields{$_} = $value if (defined $value);
+	}
 
 	# Individual validation
 	not defined $fields{md5}  or  $fields{md5} =~ /^[\da-f]{32}$/  or  die 'Bad hash!';
