@@ -5,7 +5,7 @@ RotKraken is designed as a long-term defence against [bit rot](http://en.wikiped
 
 I developed RotKraken because I'd tired of the flaws in my previous system: comparing [md5deep](http://en.wikipedia.org/wiki/Md5deep) logs. [APL](mailto:andrew@landells.net) helped me with initial prototyping while I did technical feasibility testing on extended attributes.
 
-RotKraken is written in Perl and depends on the ```IPC::Run``` and ```DateTime``` modules and the system commands ```setfattr```, ```getfattr```, and ```md5sum```. As such, I believe it should work on most Linux-based NASes. The tests are also written in Perl and depend on the ```IPC::Run```, ```Test::More```, and ```File::Path``` modules. A Bash test script is provided that runs the tests against many supported filesystems on Linux (but not those with arcane ```mkfs``` variants).
+RotKraken is written in Perl and depends on the ```DateTime``` (Ubuntu: ```libdatetime-perl```), ```File::ExtAttr``` (Ubuntu: ```libfile-extattr-perl```), and ```Digest::MD5::File``` (Ubuntu: ```libdigest-md5-file-perl```) modules. As such, I believe it should work on most Linux-based NASes. The tests are also written in Perl and depend on the ```File::ExtAttr``` (Ubuntu: ```libfile-extattr-perl```), ```Test::More``` (Ubuntu: ```libtest-most-perl```), ```IPC::Run``` (Ubuntu: ```libipc-run-perl```), and ```File::Path``` (Ubuntu: ```perl```) modules. A Bash test script is provided that runs the tests against the ext2, ext3, ext4, and btrfs filesystems on Linux; I would have liked to include more (e.g. XFS and ZFS), but their nonstandard ```mkfs``` commands dissuaded me.
 
 To facilitate addition to your ```$PATH```, a ```bin/``` directory is provided with a convenience symlink.
 
