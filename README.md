@@ -68,8 +68,10 @@ Since extended attributes only work on regular files, other filesystem entities 
 
 I haven't yet written tests for return-code behaviour, so please consider terminal output the final word on results; ```grep -v``` and ```sort```+```diff``` are your friends.
 
-Although there's no command-line option to disable directory recursion, the code contains an internal switch ```$no_recurse``` for later implementation. Symbolic links are not followed, but the code contains internal switches ```$no_follow_file_symlinks``` and ```$no_follow_dir_symlinks```. In both cases, the main blockers to full implementation are improving the option-parsing code and writing tests; for now, ```find``` is your friend.
+Although there's no command-line option to disable directory recursion, the code contains an internal switch ```$no_recurse``` for later implementation. While the code supports symlink traversal, it's currently disabled via the internal switches ```$no_follow_file_symlinks``` and ```$no_follow_dir_symlinks```. In both cases, the main blockers to full implementation are improving the option-parsing code and writing tests; for now, ```find``` is a good way to work around these limitations.
 
 Because I wanted to get the happy path working robustly first, no facility exists to print the known-good timespan for corrupt files, or print status without either initial-hashing or verifying; both features are on the roadmap.
 
 Files that change legitimately (e.g. logs and backups) are not yet well supported; you can either be more selective in which parts of your filesystem you run ```rk -i``` on in the first place, or use ```rk -x; rk -i``` to work around it. **DANGER WILL ROBINSON**: if you use this combination indiscriminately, yer gonna have a bad time &mdash; used on unchanged files, it will both break the "chain of custody" on the data and destroy the timestamps required to locate good backups.
+
+Ultimately, better support for selective hashing/verification and files that change will likely involve implementing --older-vtime and --newer-vtime features; I haven't yet worked out what they'll do with files missing vtime stamps, and it's possible a --new-only option might be useful.
