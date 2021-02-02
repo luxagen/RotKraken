@@ -24,7 +24,7 @@ use Digest::MD5::File qw(file_md5_hex);
 
 my $mode = shift;
 
-die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[ivaxe]$/);
+die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[ivaxes]$/);
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
@@ -69,6 +69,7 @@ sub item_process {
 	return &file_init  ($item) if ($mode =~ m/-i/);
 	return &file_verify($item) if ($mode =~ m/-v/);
 	return &file_all   ($item) if ($mode =~ m/-a/);
+	return &file_status($item) if ($mode =~ m/-s/);
 }
 
 ################################################################################
@@ -156,6 +157,18 @@ sub file_export {
 		$meta{md5} // '????????????????????????????????',
 		&filename_for_output($file));
 }
+
+################################################################################
+# Print a status line for the file without doing anything
+sub file_status {
+    my ($file) = @_;
+	my $m = &meta_get($file);
+	return if not defined $m;
+	my %meta = %{$m};
+
+	&print_status($file, $meta{state} // '?');
+}
+
 
 ################################################################################
 # HELPERS

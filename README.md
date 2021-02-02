@@ -29,6 +29,9 @@ To verify items against the stored metadata, use ```rk -v```. For every previous
 
 Matched files will have their verification timestamps updated but mismatches won't &mdash; this is so that, in future, mismatches can be printed with a timespan within which any backup will contain a known-good copy of the file.
 
+### Status
+To see the status of files without doing anything to them (i.e. neither -i nor -v), use ```rk -s```.
+
 ### Securely copying large datasets
 Note: make sure you copy extended attributes (see below)!
 
@@ -46,6 +49,7 @@ If you've initial-hashed **$DST** via ```rk -i``` but don't want to let ```rk```
 |     -i | Initialise files that are missing metadata                    |
 |     -v | Verify files with metadata                                    |
 |     -a | Combination of -i & -v                                        |
+|     -s | Show status only                                              |
 
 ## Status characters
 
