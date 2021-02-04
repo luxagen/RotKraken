@@ -16,7 +16,7 @@ All commands currently take the following form:
 
 ```rk -<single-option> <items...>```
 
-...where ```<items...>``` is a list of files and/or directories to be recursed. Shell globbing is supported.
+...where ```<items...>``` is a list of files and/or directories to be recursed. Shell globbing is supported. There must be exactly one option and at least one item.
 
 ## Scenarios
 
