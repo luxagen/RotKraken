@@ -22,6 +22,8 @@ use DateTime qw(now);
 use File::ExtAttr ':all';
 use Digest::MD5::File qw(file_md5_hex);
 
+$|++;
+
 my $mode = shift;
 
 die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[ivaxes]$/);
