@@ -2,31 +2,27 @@
 
 ## What is it?
 
-RotKraken is a long-term defence against [bit rot](http://en.wikipedia.org/wiki/Data_corruption). It generates hashes of filesystem trees and stores them in [extended attributes](http://en.wikipedia.org/wiki/Extended_file_attributes) along with enough information to find an uncorrupted copy. This allows detection of data corruption across many types of storage and backup, even as technology evolves over many years.
+RotKraken is a long-term defence against [bit rot](http://en.wikipedia.org/wiki/Data_corruption). It associates persistent [hashes](http://en.wikipedia.org/wiki/Hash_function) with files via [extended attributes](http://en.wikipedia.org/wiki/Extended_file_attributes), along with enough information to find an uncorrupted copy. This allows detection of data corruption across many types of storage and backup, even as technology evolves over many years.
 
 ## Where can I use it?
 
 ### Linux / NAS
 
-RotKraken can be used on all major Linux-supported filesystems that support extended attributes including [NTFS](http://en.wikipedia.org/wiki/NTFS) via [NTFS-3G](http://en.wikipedia.org/wiki/NTFS-3G).
+RotKraken can be used on all major Linux-supported filesystems that support extended attributes, including [NTFS](http://en.wikipedia.org/wiki/NTFS) via [NTFS-3G](http://en.wikipedia.org/wiki/NTFS-3G). Since most Linux-based NASes tend to support Perl, it should also work there.
 
-RotKraken should work on most Linux-based NASes as it's written in perl.
+### macOS
 
-### Mac OS
-
-Mac OS isn't yet supported.
-
-I've established feasibility and it's on the roadmap.
+RotKraken has been tested on HFS+ and should work on macOS in general, with the caveat that it emits some spurious `stat`-related messages (fix on the roadmap).
 
 ### Windows
 
 Windows isn't yet supported.
 
-Although it seems that [Windows now supports extended attributes via NTFS](http://milestone-of-se.nesuke.com/en/sv-basic/windows-basic/ntfs-filesystem-structure), Cygwin doesn't, so it's currently unsupported. While it's likely that the [Windows Subsystem for Linux](http://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) and/or one of its ancestors might be suitable for RotKraken under Windows, I haven't investigated any of them because I use Linux and Cygwin.
+Although it seems that [Windows now supports extended attributes via NTFS](http://milestone-of-se.nesuke.com/en/sv-basic/windows-basic/ntfs-filesystem-structure), Cygwin doesn't. While it's likely that the [Windows Subsystem for Linux](http://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) and/or one of its ancestors might be suitable for RotKraken under Windows, I haven't investigated them because I use Linux and Cygwin.
 
 ## License
 
-RotKraken is released under a "[GPL3](http://www.gnu.org/licenses/gpl-3.0.en.html) or later" licence and, despite my best efforts to make it obviously defect-free, comes with absolutely no warranty whatsoever, express or implied; use it at your own risk. If you find bugs, please either report them to me so I can fast-track a fix or submit a pull request with a fix of your own. I can be reached at rotkraken@luxagen.com for bug reports, suggestions, and abuse (but not all three at once).
+RotKraken is released under a "[GPL3](http://www.gnu.org/licenses/gpl-3.0.en.html) or later" licence and, despite my best efforts to make it obviously defect-free, comes with absolutely no warranty whatsoever, express or implied; use it at your own risk. If you find bugs, please either report them to me so I can fast-track a fix or submit a pull request with a fix of your own. I can be reached at rotkraken@luxagen.com for bug reports, suggestions, and abuse (but not all three at once). 
 
 ## Installation
 
@@ -44,7 +40,7 @@ RotKraken is released under a "[GPL3](http://www.gnu.org/licenses/gpl-3.0.en.htm
 
 ### Add to PATH (optional)
 
-To facilitate addition to your `$PATH`, a `bin/` directory is provided with a convenience symlink.
+To facilitate addition to your `$PATH`, a `bin/` directory is provided with both a convenience symlink and a two-parameter Bash script (`rkdiff`) for comparing pre-initialised filesystem trees.
 
 ## Usage
 
@@ -58,11 +54,11 @@ rk -<single-option> <items...>
 
 ### First-time hashing
 
-To do an initial hashing run, use `rk -i`. This will place a timestamp and content hash in the extended attributes of each (accessible) regular file while printing a status line. Previously hashed files will not be affected and their existing status printed instead.
+To do an initial hashing run, use `rk -i`. This will place a timestamp and content hash in the extended attributes of each (accessible) regular file while printing a status line. Previously-hashed files will not be affected and their existing status printed instead.
 
 ### Verification
 
-To verify items against the stored metadata, use `rk -v`. For every previously hashed file, this will rehash its content and compare with the stored hash to derive a new status value. Unhashed files will not be read but will have a status line in the output.
+To verify items against their stored metadata, use `rk -v`. This will rehash each initialised file and compare the result with the stored hash to derive a new status value. Uninitialised files will not be read but will still print a status line.
 
 Matched files will have their verification timestamps updated but mismatches won't &mdash; this is so that, in future, mismatches can be printed with a timespan within which any backup will contain a known-good copy of the file.
 
@@ -82,48 +78,55 @@ If you've initial-hashed **$DST** via `rk -i` but don't want to let `rk` touch y
 diff <(sort <(cd "$SRC" && md5deep -rzlj0 .)) <(sort <(cd "$DST" && rk -e .))
 ```
 
-### Modes
+### Disk-to-disk backups
+
+My standard workflow is:
+1. Update the backup with `rsync --progress --partial --delete-before -aHAi $MAIN/ $BAK/`.
+2. Run `rk -i $MAIN` and `rk -i $BAK` in parallel.
+3. Run `rkdiff $MAIN $BAK` to integrity-check the newly-copied data.
+
+This method avoids reverifying the untouched stuff, but you probably want to fully reverify all of your copies once in a while too.
+
+### Mode options
 
 | option | meaning                                                       |
 | -----: | :------------------------------------------------------------ |
 |     -x | Clear own metadata from extended attributes                   |
 |     -e | Export hash log to stdout in the same format as `md5deep -zl` |
 |     -i | Initialise files that are missing metadata                    |
-|     -v | Verify files with metadata                                    |
+|     -v | Verify files against metadata                                 |
 |     -a | Combination of -i & -v                                        |
-|     -s | Show status only                                              |
+|     -s | Show status but do nothing                                    |
 
 ### Status characters
 
-|   char  | meaning                                   |
-| ------: | :------                                   |
-| <space> | No metadata or just removed               |
-|       N | Just hashed, metadata added               |
-|       ? | Previously hashed but never verified      |
-|       V | Last verify passed, timestamp updated     |
-|       X | Last verify failed, timestamp not updated |
+|   char  | meaning                               |
+| ------: | :------                               |
+| <space> | No metadata or just removed           |
+|       N | Just hashed, metadata added           |
+|       ? | Previously hashed but never verified  |
+|       V | Last verify passed, vtime updated     |
+|       X | Last verify failed, vtime not updated |
 
 ## Caveats, rationales and warnings
 
-**DANGER**: `cp`, `mv`, `rsync`, and `tar` are all capable of preserving extended attributes but won't necessarily do it by default! Double-check your command-line options and run as `root` to be sure you're not throwing anything away in transit; `-a` can be useful for maximising preservation.
+**DANGER WILL ROBINSON**: `cp`, `mv`, `rsync`, and `tar` are all capable of preserving extended attributes but won't necessarily do it by default! Double-check your command-line options and run as `root` to be sure you're not throwing anything away in transit; `-a` can be useful for maximising preservation.
 
-I chose [MD5](http://en.wikipedia.org/wiki/MD5) because I value speed; I don't consider malicious replacement of files with bogus variants by bad actors a real problem in my use case, so a true cryptographic hash would be overkill. I named the hash attribute `md5` so that extra signatures from other hash functions can be added later, but I haven't worked out the logic for handling multiple signatures.
+Since it works on a per-file basis, RotKraken won't detect wholesale loss of a file. I therefore recommend separately keeping either export logs from `rk -e $DIR` or listings from `find $DIR -not -type -d` somewhere (e.g. a git repository) to catch events like this.
+
+I chose [MD5](http://en.wikipedia.org/wiki/MD5) because speed is important; I don't consider malicious replacement of files with bogus variants by bad actors a real problem in my use case, so a true cryptographic hash would be overkill. I named the hash attribute `md5` so that extra signatures from other hash functions can be added later, but I haven't worked out any logic for handling multiple signatures.
 
 Since extended attributes only work on regular files, other filesystem entities like named pipes and device nodes (everything but regular files and directories) are silently ignored.
 
 I haven't yet written tests for return-code behaviour, so please consider terminal output the final word on results; `grep -v` and `sort`+`diff` are your friends.
 
-Although there's no command-line option to disable directory recursion, the code contains an internal switch `$no_recurse` for later implementation. While the code supports symlink traversal, it's currently disabled via the internal switches `$no_follow_file_symlinks` and `$no_follow_dir_symlinks`. In both cases, the main blockers to full implementation are improving the option-parsing code and writing tests; for now, `find` is a good way to work around these limitations.
+Although there's no command-line option to disable directory recursion, the code contains an internal switch `$no_recurse` for later implementation. While the code supports symlink traversal, it's currently disabled via the internal switches `$no_follow_file_symlinks` and `$no_follow_dir_symlinks`. In both cases, the main blockers to full implementation are improving the option-parsing code and writing tests; for now, `find` is a good workaround.
 
-Because I wanted to get the happy path working robustly first, no facility exists to print the known-good timespan for corrupt files, or print status without either initial-hashing or verifying; both features are on the roadmap.
+Because I wanted to get the happy path working robustly first, no facility exists to print the known-good timespan for corrupt files; this is on the roadmap.
 
-Files that change legitimately (e.g. logs and backups) are not yet well supported; you can either be more selective in which parts of your filesystem you run `rk -i` on in the first place, or use `rk -x; rk -i` to work around it. **DANGER**: if you use this combination indiscriminately, you are going to have a bad time &mdash; used on unchanged files, it will both break the "chain of custody" on the data and destroy the timestamps required to locate good backups.
+Files that change legitimately over time (e.g. logs and backups) are not yet well supported; you can either be more selective in which parts of your filesystem you run `rk -i` on in the first place, or use `rk -x; rk -i` to work around it. **DANGER WILL ROBINSON**: if you use this combination indiscriminately, yer gonna have a bad time &mdash; used on unchanged files, it will both break the "chain of custody" on the data and destroy the timestamps required to locate good backups.
 
-Ultimately, better support for selective hashing/verification and files that change will likely involve implementing `--older-vtime` and `--newer-vtime` features; I haven't yet worked out what they'll do with files missing vtime stamps, and it's possible a --new-only option might be useful.
-
-## Perl modules in use
-
-RotKraken is written in Perl and depends on the `DateTime` (Ubuntu: `libdatetime-perl`), `File::ExtAttr` (Ubuntu: `libfile-extattr-perl`), and `Digest::MD5::File` (Ubuntu: `libdigest-md5-file-perl`) modules. As such, I believe it should work on most Linux-based NASes. The tests are also written in Perl and depend on the `File::ExtAttr` (Ubuntu: `libfile-extattr-perl`), `Test::More` (Ubuntu: `libtest-most-perl`), `IPC::Run` (Ubuntu: `libipc-run-perl`), and `File::Path` (Ubuntu: `perl`) modules.
+Ultimately, better support for selective hashing/verification and files that change will likely involve implementing `--older-vtime` and `--newer-vtime` features; I haven't yet worked out what they'll do with files missing vtime stamps, and it's possible a `--new-only` option might be useful.
 
 ## Test scripts
 
