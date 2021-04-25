@@ -21,32 +21,58 @@ use warnings;
 use DateTime qw(now);
 use File::ExtAttr ':all';
 use Digest::MD5::File qw(file_md5_hex);
+use Getopt::Lucid qw( :all );
 
-$|++;
+my @options_spec = (
+	Switch("clear|x"),
+	Switch("export|e"),
+	Switch("init|i"),
+	Switch("verify|v"),
+	Switch("init_verify|a"),
+	Switch("status|s"),
+	Switch("help|h"),
+);
 
-my $mode = shift;
+# read config in a way that means we can output usage info
+# https://github.com/dagolden/Getopt-Lucid/blob/e39a85a03d838020d53eb0490b4a567b550d398b/lib/Getopt/Lucid.pm#L1480-L1492
+my $options = Getopt::Lucid->getopt( \@options_spec )->validate();
 
-die "Incorrect usage!\n" if (not defined $mode && $mode =~ m/^-[ivaxes]$/);
+usage() and exit(0) if $options->get_help;
+
+my $mode_clear = $options->get_clear;
+my $mode_export = $options->get_export;
+my $mode_init = $options->get_init;
+my $mode_verify = $options->get_verify;
+my $mode_init_verify = $options->get_init_verify;
+my $mode_status = $options->get_status;
+print("Error: No options specified.\n\n") and usage() and exit(1) unless $mode_clear or $mode_export or $mode_init or $mode_verify or $mode_init_verify or $mode_status;
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
 my $no_follow_dir_symlinks = 1;
 
+# remaining non-option arguments should be the file/folder list to process
+print("Error: No paths specified.\n\n") and usage() and exit(1) unless @ARGV;
 foreach my $item (@ARGV) {
-	die "Path '$item' not found" if (not -e $item);
-	die "Path '$item' is not a file" if (not (-f $item or -d $item));
+	print "Path '$item' not found\n" and exit(2) if (not -e $item);
+	print "Path '$item' is not a file\n" and exit(3) if (not (-f $item or -d $item));
 }
 
 foreach my $item (@ARGV) {
-	&item_process($item, $mode);
+	&item_process($item);
 }
 
 exit(0);
 
+sub usage {
+	print $options->usage();
+	print "        arguments: the list of paths to process\n";
+}
+
 ################################################################################
 # Initial-hash the file if it hasn't already been done
 sub item_process {
-    my ($item,$mode) = @_;
+    my ($item) = @_;
 
 	if (-d $item) {
 		return if ($no_recurse);
@@ -57,21 +83,21 @@ sub item_process {
 
 		foreach my $nested (@list) {
 			next if $nested eq "." or $nested eq "..";
-			&item_process("$item/$nested", $mode);
+			&item_process("$item/$nested");
 		}
 
 		closedir($handle);
-		
+
 		return;
 	}
 
 	return if (-l $item  and  $no_follow_file_symlinks);
-	return &file_remove($item) if ($mode =~ m/-x/);
-	return &file_export($item) if ($mode =~ m/-e/);
-	return &file_init  ($item) if ($mode =~ m/-i/);
-	return &file_verify($item) if ($mode =~ m/-v/);
-	return &file_all   ($item) if ($mode =~ m/-a/);
-	return &file_status($item) if ($mode =~ m/-s/);
+	return &file_remove($item) if ($mode_clear);
+	return &file_export($item) if ($mode_export);
+	return &file_init  ($item) if ($mode_init);
+	return &file_verify($item) if ($mode_verify);
+	return &file_all   ($item) if ($mode_init_verify);
+	return &file_status($item) if ($mode_status);
 }
 
 ################################################################################

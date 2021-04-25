@@ -36,7 +36,7 @@ RotKraken is released under a "[GPL3](http://www.gnu.org/licenses/gpl-3.0.en.htm
 
 	CPAN:
 	```
-	cpan -I DateTime File::ExtAttr Digest::MD5::File
+	cpan -I DateTime File::ExtAttr Digest::MD5::File Getopt::Lucid
 	```
 	
 ### Add to PATH (optional)
