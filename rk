@@ -79,6 +79,9 @@ Status characters:
         |       ? | Previously hashed but never verified  |
         |       V | Last verify passed, vtime updated     |
         |       X | Last verify failed, vtime not updated |
+
+https://github.com/luxagen/RotKraken
+
 EOF
 }
 
