@@ -1,12 +1,5 @@
 #!/usr/bin/env perl
 
-################################################################################
-# Output: status column
-#  		[space] no metadata
-# ?		initial-hashed but unverified
-# V		last verification passed
-# X		last verification failed
-
 use strict;
 use warnings;
 
@@ -58,7 +51,20 @@ exit(0);
 
 sub usage {
 	print $options->usage();
-	print "        arguments: the list of paths to process\n";
+
+	print <<EOF
+        arguments: the list of paths to process
+
+Status characters:
+
+        |   char  | meaning                               |
+        | ------- | -------                               |
+        | <space> | No metadata or just removed           |
+        |       N | Just hashed, metadata added           |
+        |       ? | Previously hashed but never verified  |
+        |       V | Last verify passed, vtime updated     |
+        |       X | Last verify failed, vtime not updated |
+EOF
 }
 
 ################################################################################
