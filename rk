@@ -24,12 +24,12 @@ use Digest::MD5::File qw(file_md5_hex);
 use Getopt::Lucid qw( :all );
 
 my @options_spec = (
-	Switch("clear|x"),
-	Switch("export|e"),
-	Switch("init|i"),
-	Switch("verify|v"),
-	Switch("init_verify|a"),
-	Switch("status|s"),
+	Switch("clear|x")->doc("Clear own metadata from extended attributes"),
+	Switch("export|e")->doc("Export hash log to stdout in the same format as `md5deep -zl`"),
+	Switch("init|i")->doc("Initialise files that are missing metadata"),
+	Switch("verify|v")->doc("Verify files against metadata"),
+	Switch("init_verify|a")->doc("Combination of -i & -v"),
+	Switch("status|s")->doc("Show status but do nothing"),
 	Switch("help|h"),
 );
 
