@@ -1,20 +1,4 @@
 #!/usr/bin/env perl
-
-################################################################################
-# Mode options
-# -x    Clear own metadata from extended attributes
-# -e    Export hash log to stdout in the same format as `md5deep -zl`
-# -i    Initialise files that are missing metadata
-# -v    Verify initialised files with metadata
-# -a    Combination of -i & -v
-
-################################################################################
-# Output: status column
-#  		[space] no metadata
-# ?		initial-hashed but unverified
-# V		last verification passed
-# X		last verification failed
-
 use strict;
 use warnings;
 
