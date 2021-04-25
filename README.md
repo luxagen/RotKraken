@@ -91,12 +91,12 @@ This method avoids reverifying the untouched stuff, but you probably want to ful
 
 | option | meaning                                                       |
 | -----: | :------------------------------------------------------------ |
-|     -x | Clear own metadata from extended attributes                   |
+|     -x | Clear metadata from extended attributes                       |
 |     -e | Export hash log to stdout in the same format as `md5deep -zl` |
 |     -i | Initialise files that are missing metadata                    |
-|     -v | Verify files against metadata                                 |
+|     -v | Verify initialised files against metadata                     |
 |     -a | Combination of -i & -v                                        |
-|     -s | Show status but do nothing                                    |
+|     -s | Show status; no action                                        |
 
 ### Status characters
 

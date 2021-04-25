@@ -1,14 +1,6 @@
 #!/usr/bin/env perl
 
 ################################################################################
-# Mode options
-# -x    Clear own metadata from extended attributes
-# -e    Export hash log to stdout in the same format as `md5deep -zl`
-# -i    Initialise files that are missing metadata
-# -v    Verify initialised files with metadata
-# -a    Combination of -i & -v
-
-################################################################################
 # Output: status column
 #  		[space] no metadata
 # ?		initial-hashed but unverified
@@ -24,13 +16,13 @@ use Digest::MD5::File qw(file_md5_hex);
 use Getopt::Lucid qw( :all );
 
 my @options_spec = (
-	Switch(      '--clear|-x'),
-	Switch(     '--export|-e'),
-	Switch(       '--init|-i'),
-	Switch(     '--verify|-v'),
-	Switch('--init_verify|-a'),
-	Switch(     '--status|-s'),
-	Switch(       '--help|-h'),
+	Switch(      '--clear|-x')->doc('Clear metadata from extended attributes'    ),
+	Switch(     '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
+	Switch(       '--init|-i')->doc('Initialise files that are missing metadata' ),
+	Switch(     '--verify|-v')->doc('Verify initialised files against metadata'  ),
+	Switch('--init_verify|-a')->doc('Combination of -i and -v'                   ),
+	Switch(     '--status|-s')->doc('Show status; no action'                     ),
+	Switch(       '--help|-h')->doc('Print usage (this)'                         ),
 );
 
 # read config in a way that means we can output usage info
