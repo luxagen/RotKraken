@@ -103,7 +103,7 @@ This method avoids reverifying the untouched stuff, but you probably want to ful
 
 |   char  | meaning                               |
 | ------: | :------                               |
-| <space> |	No metadata or just removed           |
+| <space> | No metadata or just removed           |
 |       N | Just hashed, metadata added           |
 |       ? | Previously hashed but never verified  |
 |       V | Last verify passed, vtime updated     |
