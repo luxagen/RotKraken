@@ -8,7 +8,7 @@ use Digest::MD5::File qw(file_md5_hex);
 use Getopt::Lucid qw( :all );
 
 my @options_spec = (
-	Switch("clear|x")->doc("Clear own metadata from extended attributes"),
+	Switch("delete|d")->doc("Delete RotKraken metadata from extended attributes"),
 	Switch("export|e")->doc("Export hash log to stdout in the same format as `md5deep -zl`"),
 	Switch("init|i")->doc("Initialise files that are missing metadata"),
 	Switch("verify|v")->doc("Verify files against metadata"),
@@ -23,13 +23,13 @@ my $options = Getopt::Lucid->getopt( \@options_spec )->validate();
 
 usage() and exit(0) if $options->get_help;
 
-my $mode_clear = $options->get_clear;
+my $mode_delete = $options->get_delete;
 my $mode_export = $options->get_export;
 my $mode_init = $options->get_init;
 my $mode_verify = $options->get_verify;
 my $mode_init_verify = $options->get_init_verify;
 my $mode_status = $options->get_status;
-print("Error: No options specified.\n\n") and usage() and exit(1) unless $mode_clear or $mode_export or $mode_init or $mode_verify or $mode_init_verify or $mode_status;
+print("Error: No options specified.\n\n") and usage() and exit(1) unless $mode_delete or $mode_export or $mode_init or $mode_verify or $mode_init_verify or $mode_status;
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
@@ -92,7 +92,7 @@ sub item_process {
 	}
 
 	return if (-l $item  and  $no_follow_file_symlinks);
-	return &file_remove($item) if ($mode_clear);
+	return &file_remove($item) if ($mode_delete);
 	return &file_export($item) if ($mode_export);
 	return &file_init  ($item) if ($mode_init);
 	return &file_verify($item) if ($mode_verify);
