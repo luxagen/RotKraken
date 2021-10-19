@@ -195,7 +195,7 @@ sub file_status {
 	return if not defined $m;
 	my %meta = %{$m};
 
-	&print_status($file, $meta{state} // '?');
+	&print_status($file, (exists $meta{htime} ? $meta{state} : ' ') // '?');
 }
 
 
