@@ -10,12 +10,12 @@ use Digest::MD5::File qw(file_md5_hex);
 use Getopt::Lucid qw( :all );
 
 my @options_spec = (
-	Switch(      '--clear|-x')->doc('Clear metadata from extended attributes'    ),
-	Switch(     '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
-	Switch(       '--init|-i')->doc('Initialise files that are missing metadata' ),
-	Switch(     '--verify|-v')->doc('Verify initialised files against metadata'  ),
-	Switch('--init_verify|-a')->doc('Combination of -i and -v'                   ),
-	Switch(       '--help|-h')->doc('Print usage (this)'                         ),
+    Switch(      '--clear|-x')->doc('Clear metadata from extended attributes'    ),
+    Switch(     '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
+    Switch(       '--init|-i')->doc('Initialise files that are missing metadata' ),
+    Switch(     '--verify|-v')->doc('Verify initialised files against metadata'  ),
+    Switch('--init_verify|-a')->doc('Combination of -i and -v'                   ),
+    Switch(       '--help|-h')->doc('Print usage (this)'                         ),
 );
 
 # read config in a way that means we can output usage info
@@ -37,22 +37,22 @@ my $no_follow_dir_symlinks = 1;
 # remaining non-option arguments should be the file/folder list to process
 print("Error: No paths specified.\n\n") and usage() and exit(1) unless @ARGV;
 foreach my $item (@ARGV) {
-	print "Path '$item' not found\n" and exit(2) unless -e $item;
-	print "Path '$item' is not a file\n" and exit(3) unless -f $item  or  -d $item;
+    print "Path '$item' not found\n" and exit(2) unless -e $item;
+    print "Path '$item' is not a file\n" and exit(3) unless -f $item  or  -d $item;
 }
 
 foreach my $item (@ARGV) {
-	&item_process($item);
+    &item_process($item);
 }
 
 exit(0);
 
 sub usage {
-	print "RotKraken v1.0, copyright © 2020-2021 Luxagen\n\n";
+   print "RotKraken v1.0, copyright © 2020-2021 Luxagen\n\n";
 
-	print $options->usage();
+    print $options->usage();
 
-	print <<EOF
+    print <<EOF
         arguments: the list of paths to process
 
 Status characters:
@@ -75,29 +75,29 @@ EOF
 sub item_process {
     my ($item) = @_;
 
-	if (-d $item) {
-		return if (-e "$item/.rk.skip"  or  $no_recurse);
-		return if (-l $item  and  $no_follow_dir_symlinks);
+    if (-d $item) {
+        return if (-e "$item/.rk.skip"  or  $no_recurse);
+        return if (-l $item  and  $no_follow_dir_symlinks);
 
-		opendir(my $handle, $item) or die "Cannot open directory '$!'";
-		my @list = readdir($handle);
+        opendir(my $handle, $item) or die "Cannot open directory '$!'";
+        my @list = readdir($handle);
 
-		foreach my $nested (@list) {
-			next if $nested eq "."  or  $nested eq "..";
-			&item_process("$item/$nested");
-		}
+        foreach my $nested (@list) {
+            next if $nested eq "."  or  $nested eq "..";
+            &item_process("$item/$nested");
+        }
 
-		closedir($handle);
+        closedir($handle);
 
-		return;
-	}
+        return;
+    }
 
-	return if (-l $item  and  $no_follow_file_symlinks);
-	return &file_remove($item) if ($mode_clear);
-	return &file_init  ($item) if ($mode_init);
-	return &file_verify($item) if ($mode_verify);
-	return &file_all   ($item) if ($mode_init_verify);
-	return &file_status_export($item);
+    return if (-l $item  and  $no_follow_file_symlinks);
+    return &file_remove($item) if ($mode_clear);
+    return &file_init  ($item) if ($mode_init);
+    return &file_verify($item) if ($mode_verify);
+    return &file_all   ($item) if ($mode_init_verify);
+    return &file_status_export($item);
 }
 
 ################################################################################
@@ -105,48 +105,48 @@ sub item_process {
 sub file_init {
     my ($file) = @_;
 
-	my $m = &meta_get($file);
-	return unless defined $m;
-	my %meta = %{$m};
+    my $m = &meta_get($file);
+    return unless defined $m;
+    my %meta = %{$m};
 
-	return (defined $meta{md5}) ?
-		&print_status($file, $meta{state} // '?', $meta{md5}) :
-		&print_status($file, 'N', &hash_and_store($file));
+    return (defined $meta{md5}) ?
+        &print_status($file, $meta{state} // '?', $meta{md5}) :
+        &print_status($file, 'N', &hash_and_store($file));
 }
 
 ################################################################################
 # Verify the file if it's been initial-hashed
 sub file_verify {
-	my ($file) = @_;
+    my ($file) = @_;
 
-	my $m = &meta_get($file);
-	return unless defined $m;
-	my %meta = %{$m};
+    my $m = &meta_get($file);
+    return unless defined $m;
+    my %meta = %{$m};
 
-	return &print_status($file, ' ', undef) unless (defined $meta{md5}); # No existing hash? Skip file
+    return &print_status($file, ' ', undef) unless (defined $meta{md5}); # No existing hash? Skip file
 
-	if (&verify_hash($file, $meta{md5})) {
-		&setfattr($file, 'rk.state', 'V');
-		&setfattr($file, 'rk.vtime', DateTime->now);
-		&print_status($file, 'V', $meta{md5});
-	}
-	else {
-		&setfattr($file, 'rk.state', 'X');
-		&print_status($file, 'X', $meta{md5});
-	}
+    if (&verify_hash($file, $meta{md5})) {
+        &setfattr($file, 'rk.state', 'V');
+        &setfattr($file, 'rk.vtime', DateTime->now);
+        &print_status($file, 'V', $meta{md5});
+    }
+    else {
+        &setfattr($file, 'rk.state', 'X');
+        &print_status($file, 'X', $meta{md5});
+    }
 }
 
 ################################################################################
 # Verify the file if it's been initial-hashed; otherwise initial-hash it
 sub file_all {
-	my ($file) = @_;
+    my ($file) = @_;
 
-	my $m = &meta_get($file);
-	return unless defined $m;
-	my %meta = %{$m};
+    my $m = &meta_get($file);
+    return unless defined $m;
+    my %meta = %{$m};
 
-	return &file_verify($file) if (defined $meta{md5});
-	return &file_init($file);
+    return &file_verify($file) if (defined $meta{md5});
+    return &file_init($file);
 }
 
 ################################################################################
@@ -154,52 +154,52 @@ sub file_all {
 sub file_remove {
     my ($file) = @_;
 
-	my $out;
-	my $err;
+    my $out;
+    my $err;
 
-	# Discard stderr and ignore return codes to make a best effort at xattr deletion
+    # Discard stderr and ignore return codes to make a best effort at xattr deletion
 
-	foreach ('md5', 'htime', 'state', 'vtime') {
-		&delfattr($file, "rk.$_");
-	}
+    foreach ('md5', 'htime', 'state', 'vtime') {
+        &delfattr($file, "rk.$_");
+    }
 
-	&print_status($file, ' ', undef);
+    &print_status($file, ' ', undef);
 }
 
 ################################################################################
 # Print a status line for the file without doing anything
 sub file_status_export {
     my ($file) = @_;
-	my $m = &meta_get($file);
-	return unless defined $m;
-	my %meta = %{$m};
+    my $m = &meta_get($file);
+    return unless defined $m;
+    my %meta = %{$m};
 
-	&print_status($file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
+    &print_status($file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
 }
 
 ################################################################################
 # HELPERS
 
 sub filename_for_output {
-	return $_[0] =~ s/\n/\\n/gr;
+    return $_[0] =~ s/\n/\\n/gr;
 }
 
 sub print_status {
     my ($file, $status, $hash) = @_;
 
     if ($mode_export) {
-	printf(
-		"%10u  %s  %s\n",
-		-s $file,
-		$hash // '????????????????????????????????',
-		&filename_for_output($file));
+        printf(
+            "%10u  %s  %s\n",
+            -s $file,
+            $hash // '????????????????????????????????',
+            &filename_for_output($file));
     }
     else {
         printf(
             "%s %s\n",
             $status,
             &filename_for_output($file));
-	}
+    }
 }
 
 ################################################################################
@@ -207,8 +207,8 @@ sub print_status {
 sub store_hash {
     my ($file, $hash) = @_;
 
-	&setfattr($file, 'rk.md5', $hash);
-	&setfattr($file, 'rk.htime', DateTime->now);
+    &setfattr($file, 'rk.md5', $hash);
+    &setfattr($file, 'rk.htime', DateTime->now);
 }
 
 ################################################################################
@@ -216,8 +216,8 @@ sub store_hash {
 sub hash_and_store {
     my ($file) = @_;
     my $hash = &hash_content($file);
-	&store_hash($file, $hash) if defined $hash;
-	return $hash;
+    &store_hash($file, $hash) if defined $hash;
+    return $hash;
 }
 
 ################################################################################
@@ -231,7 +231,7 @@ sub verify_hash {
 # Hash the file and return the resulting hash
 sub hash_content {
     my ($file) = @_;
-	return &file_md5_hex($file);
+    return &file_md5_hex($file);
 }
 
 ################################################################################
@@ -240,24 +240,24 @@ sub hash_content {
 sub meta_get() {
     my ($file) = @_;
 
-	my $out;
+    my $out;
 
-	my %fields;
+    my %fields;
 
-	foreach my $key ('md5', 'htime', 'state', 'vtime') {
-		my $value = &getfattr($file, "rk.$key");
-		$fields{$key} = $value if defined $value;
-	}
+    foreach my $key ('md5', 'htime', 'state', 'vtime') {
+        my $value = &getfattr($file, "rk.$key");
+        $fields{$key} = $value if defined $value;
+    }
 
-	# Individual validation
-	die 'Bad hash!'  if defined   $fields{md5}    and  $fields{md5}   !~ /^[\da-f]{32}$/;
-	die 'Bad htime!' if defined   $fields{htime}  and  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
-	die 'Bad state!' if defined   $fields{state}  and  $fields{state} !~ /[VX]/;
-	die 'Bad htime!' if defined   $fields{vtime}  and  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+    # Individual validation
+    die 'Bad hash!'  if defined $fields{md5}    and  $fields{md5}   !~ /^[\da-f]{32}$/;
+    die 'Bad htime!' if defined $fields{htime}  and  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+    die 'Bad state!' if defined $fields{state}  and  $fields{state} !~ /[VX]/;
+    die 'Bad htime!' if defined $fields{vtime}  and  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
-	# Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
-	delete @fields{'md5', 'htime', 'state', 'vtime'} unless  defined $fields{md5} and defined $fields{htime};
-	delete @fields{'state', 'vtime'} unless defined $fields{state};
+    # Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
+    delete @fields{'md5', 'htime', 'state', 'vtime'} unless  defined $fields{md5} and defined $fields{htime};
+    delete @fields{'state', 'vtime'} unless defined $fields{state};
 
     return \%fields;
 }
