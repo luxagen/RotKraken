@@ -37,7 +37,7 @@ my $p3 = "horrible3-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
 foreach my $base (@ARGV) {
 	&test_nx($base);
 	&test_nv($base);
-	&test_a ($base);
+	&test_iv($base);
 	&test_e ($base);
 	&test_l ($base);
 	&test_r ($base);
@@ -126,7 +126,7 @@ sub test_nv() {
     unlink "$base/$f1";
 }
 
-sub test_a() {
+sub test_iv() {
 	my ($base) = @_;
 	my %meta;
 
@@ -135,7 +135,7 @@ sub test_a() {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ("$base/$f1")), "N $base/$p1\n");
+	&is(&invoke('iv', ("$base/$f1")), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -151,7 +151,7 @@ sub test_a() {
 
 	sleep(1); # Make sure timestamp changes
 	&is(
-		&invoke('a', ("$base/$f1", "$base/$f2")),
+		&invoke('iv', ("$base/$f1", "$base/$f2")),
 		"X $base/$p1\nN $base/$p2\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,3);
@@ -179,7 +179,7 @@ sub test_e {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('a', ("$base/$f1")), "N $base/$p1\n");
+	&is(&invoke('iv', ("$base/$f1")), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);

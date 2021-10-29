@@ -10,12 +10,11 @@ use Digest::MD5::File qw(file_md5_hex);
 use Getopt::Lucid qw( :all );
 
 my @options_spec = (
-    Switch(      '--clear|-x')->doc('Clear metadata from extended attributes'    ),
-    Switch(     '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
-    Switch(       '--init|-i')->doc('Initialise files that are missing metadata' ),
-    Switch(     '--verify|-v')->doc('Verify initialised files against metadata'  ),
-    Switch('--init_verify|-a')->doc('Combination of -i and -v'                   ),
-    Switch(       '--help|-h')->doc('Print usage (this)'                         ),
+    Switch( '--clear|-x')->doc('Clear metadata from extended attributes'    ),
+    Switch('--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
+    Switch(  '--init|-i')->doc('Initialise files that are missing metadata' ),
+    Switch('--verify|-v')->doc('Verify initialised files against metadata'  ),
+    Switch(  '--help|-h')->doc('Print usage (this)'                         ),
 );
 
 # read config in a way that means we can output usage info
@@ -24,11 +23,10 @@ my $options = Getopt::Lucid->getopt(\@options_spec, {strict => 1})->validate();
 
 usage() and exit(0) if $options->get_help;
 
-my $mode_clear       = $options->get_clear      ;
-my $mode_export      = $options->get_export     ;
-my $mode_init        = $options->get_init       ;
-my $mode_verify      = $options->get_verify     ;
-my $mode_init_verify = $options->get_init_verify;
+my $mode_clear  = $options->get_clear ;
+my $mode_export = $options->get_export;
+my $mode_init   = $options->get_init  ;
+my $mode_verify = $options->get_verify;
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
@@ -94,59 +92,34 @@ sub item_process {
 
     return if (-l $item  and  $no_follow_file_symlinks);
     return &file_remove($item) if ($mode_clear);
-    return &file_init  ($item) if ($mode_init);
-    return &file_verify($item) if ($mode_verify);
-    return &file_all   ($item) if ($mode_init_verify);
-    return &file_status_export($item);
+    return &file_init_verify($item);
 }
 
 ################################################################################
-# Initial-hash the file if it hasn't already been done
-sub file_init {
+# This implements both initialisation and verification
+sub file_init_verify {
     my ($file) = @_;
 
     my $m = &meta_get($file);
     return unless defined $m;
     my %meta = %{$m};
 
-    return (defined $meta{md5}) ?
-        &print_status($file, $meta{state} // '?', $meta{md5}) :
-        &print_status($file, 'N', &hash_and_store($file));
-}
+    if ($mode_verify  and  defined $meta{md5}) { # Can verify
+        if (&verify_hash($file, $meta{md5})) {
+            &setfattr($file, 'rk.state', 'V');
+            &setfattr($file, 'rk.vtime', DateTime->now);
+            return &print_status($file, 'V', $meta{md5});
+        }
 
-################################################################################
-# Verify the file if it's been initial-hashed
-sub file_verify {
-    my ($file) = @_;
-
-    my $m = &meta_get($file);
-    return unless defined $m;
-    my %meta = %{$m};
-
-    return &print_status($file, ' ', undef) unless (defined $meta{md5}); # No existing hash? Skip file
-
-    if (&verify_hash($file, $meta{md5})) {
-        &setfattr($file, 'rk.state', 'V');
-        &setfattr($file, 'rk.vtime', DateTime->now);
-        &print_status($file, 'V', $meta{md5});
-    }
-    else {
         &setfattr($file, 'rk.state', 'X');
-        &print_status($file, 'X', $meta{md5});
+        return &print_status($file, 'X', $meta{md5});
     }
-}
 
-################################################################################
-# Verify the file if it's been initial-hashed; otherwise initial-hash it
-sub file_all {
-    my ($file) = @_;
+    if ($mode_init  and  not defined $meta{md5}) { # Can initialise
+        return &print_status($file, 'N', &hash_and_store($file));
+    }
 
-    my $m = &meta_get($file);
-    return unless defined $m;
-    my %meta = %{$m};
-
-    return &file_verify($file) if (defined $meta{md5});
-    return &file_init($file);
+    &print_status($file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
 }
 
 ################################################################################
@@ -164,17 +137,6 @@ sub file_remove {
     }
 
     &print_status($file, ' ', undef);
-}
-
-################################################################################
-# Print a status line for the file without doing anything
-sub file_status_export {
-    my ($file) = @_;
-    my $m = &meta_get($file);
-    return unless defined $m;
-    my %meta = %{$m};
-
-    &print_status($file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
 }
 
 ################################################################################
