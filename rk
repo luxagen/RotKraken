@@ -91,7 +91,7 @@ sub item_process {
     }
 
     return if (-l $item  and  $no_follow_file_symlinks);
-    return &file_remove($item) if ($mode_clear);
+    return &file_clear($item) if ($mode_clear);
     return &file_init_verify($item);
 }
 
@@ -124,7 +124,7 @@ sub file_init_verify {
 
 ################################################################################
 # Remove all metadata from the file
-sub file_remove {
+sub file_clear {
     my ($file) = @_;
 
     my $out;
