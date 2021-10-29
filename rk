@@ -15,7 +15,6 @@ my @options_spec = (
 	Switch(       '--init|-i')->doc('Initialise files that are missing metadata' ),
 	Switch(     '--verify|-v')->doc('Verify initialised files against metadata'  ),
 	Switch('--init_verify|-a')->doc('Combination of -i and -v'                   ),
-	Switch(     '--status|-s')->doc('Show status; no action'                     ),
 	Switch(       '--help|-h')->doc('Print usage (this)'                         ),
 );
 
@@ -30,8 +29,6 @@ my $mode_export      = $options->get_export     ;
 my $mode_init        = $options->get_init       ;
 my $mode_verify      = $options->get_verify     ;
 my $mode_init_verify = $options->get_init_verify;
-my $mode_status      = $options->get_status     ;
-print("Error: No options specified.\n\n") and usage() and exit(1) unless $mode_clear or $mode_export or $mode_init or $mode_verify or $mode_init_verify or $mode_status;
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
@@ -101,7 +98,7 @@ sub item_process {
 	return &file_init  ($item) if ($mode_init);
 	return &file_verify($item) if ($mode_verify);
 	return &file_all   ($item) if ($mode_init_verify);
-	return &file_status($item) if ($mode_status);
+	return &file_status($item);
 }
 
 ################################################################################
