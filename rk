@@ -32,6 +32,10 @@ my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
 my $no_follow_dir_symlinks = 1;
 
+if ($mode_clear and ($mode_init or $mode_verify)) {
+    die "Clear [-x] cannot be combined with initialise [-i] or verify [-v]!";
+}
+
 # remaining non-option arguments should be the file/folder list to process
 print("Error: No paths specified.\n\n") and usage() and exit(1) unless @ARGV;
 foreach my $item (@ARGV) {
@@ -91,17 +95,24 @@ sub item_process {
     }
 
     return if (-l $item  and  $no_follow_file_symlinks);
-    return &file_clear($item) if ($mode_clear);
-    return &file_init_verify($item);
+    return &file_process($item);
 }
 
 ################################################################################
 # This implements both initialisation and verification
-sub file_init_verify {
+sub file_process {
     my ($file) = @_;
 
+    if ($mode_clear) {
+        foreach ('md5', 'htime', 'state', 'vtime') {
+            &delfattr($file, "rk.$_");
+        }
+
+        return &print_status($file, ' ', undef);
+    }
+
     my $m = &meta_get($file);
-    return unless defined $m;
+    return unless defined $m; # TODO this should never happen, so die
     my %meta = %{$m};
 
     if ($mode_verify  and  defined $meta{md5}) { # Can verify
@@ -120,23 +131,6 @@ sub file_init_verify {
     }
 
     &print_status($file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
-}
-
-################################################################################
-# Remove all metadata from the file
-sub file_clear {
-    my ($file) = @_;
-
-    my $out;
-    my $err;
-
-    # Discard stderr and ignore return codes to make a best effort at xattr deletion
-
-    foreach ('md5', 'htime', 'state', 'vtime') {
-        &delfattr($file, "rk.$_");
-    }
-
-    &print_status($file, ' ', undef);
 }
 
 ################################################################################
