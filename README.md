@@ -66,6 +66,9 @@ Matched files will have their verification timestamps updated but mismatches won
 
 To see the status of files without doing anything to them (i.e. neither -i nor -v), use `rk -s`.
 
+### Skipping subtrees
+The presence of an ```.rk.skip``` file will make RK skip this directory and all descendants.
+
 ### Securely copying large datasets
 
 Note: make sure you copy extended attributes (see below)!

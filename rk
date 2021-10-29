@@ -79,7 +79,7 @@ sub item_process {
     my ($item) = @_;
 
 	if (-d $item) {
-		return if ($no_recurse);
+		return if (-e "$item/.rk.skip"  or  $no_recurse);
 		return if (-l $item  and  $no_follow_dir_symlinks);
 
 		opendir(my $handle, $item) or die "Cannot open directory '$!'";
