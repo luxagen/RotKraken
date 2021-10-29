@@ -115,10 +115,10 @@ sub file_init {
 
 	if (not defined $meta{md5}) {
 		&hash_and_store($file);
-		return print_status($file, 'N');
+		return &print_status($file, 'N');
 	}
 
-	return print_status($file, $meta{state} // '?');
+	return &print_status($file, $meta{state} // '?');
 }
 
 ################################################################################
@@ -130,16 +130,16 @@ sub file_verify {
 	return unless defined $m;
 	my %meta = %{$m};
 
-	return print_status($file, ' ') unless (defined $meta{md5}); # No existing hash? Skip file
+	return &print_status($file, ' ') unless (defined $meta{md5}); # No existing hash? Skip file
 
 	if (&verify_hash($file, $meta{md5})) {
 		&setfattr($file, 'rk.state', 'V');
 		&setfattr($file, 'rk.vtime', DateTime->now);
-		print_status($file, 'V');
+		&print_status($file, 'V');
 	}
 	else {
 		&setfattr($file, 'rk.state', 'X');
-		print_status($file, 'X');
+		&print_status($file, 'X');
 	}
 }
 
@@ -170,7 +170,7 @@ sub file_remove {
 		&delfattr($file, "rk.$_");
 	}
 
-	print_status($file, ' ');
+	&print_status($file, ' ');
 }
 
 ################################################################################
