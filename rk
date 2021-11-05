@@ -94,8 +94,8 @@ sub item_process {
         return;
     }
 
-    return if (-l $item  and  $no_follow_file_symlinks);
-    return &file_process($item);
+    return if -l $item  and  $no_follow_file_symlinks;
+    return &file_process($item) if -f $item;
 }
 
 ################################################################################
