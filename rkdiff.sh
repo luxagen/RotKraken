@@ -5,4 +5,4 @@ if [ "$#" -ne 2 ]; then
 	exit 1
 fi
 
-(cd "$1" && rk -e .) | rkdiff-stdin "$2"
+rke "$1" | rkdiff-stdin "$2"

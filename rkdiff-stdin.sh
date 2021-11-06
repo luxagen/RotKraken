@@ -5,4 +5,4 @@ if [ "$#" -ne 1 ]; then
 	exit 1
 fi
 
-sort - | diff - <(cd "$1" && rk -e . | sort)
+sort - | diff - <(rke "$1" | sort)
