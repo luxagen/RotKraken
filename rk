@@ -90,6 +90,8 @@ sub item_process {
         opendir(my $handle, $item) or die "$!: cannot open directory!";
         my @list = readdir($handle);
 
+        $item =~ s/\/$//; # Remove any trailing slash before concatenating
+
         foreach my $nested (@list) {
             next if $nested eq "."  or  $nested eq "..";
             next if exists $kids_skip{$nested};
