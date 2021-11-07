@@ -81,7 +81,7 @@ sub item_process {
         return if (-e "$item/.rk.skip"  or  $no_recurse);
         return if (-l $item  and  $no_follow_dir_symlinks);
 
-        opendir(my $handle, $item) or die "Cannot open directory '$!'";
+        opendir(my $handle, $item) or die "$!: cannot open directory!";
         my @list = readdir($handle);
 
         foreach my $nested (@list) {
@@ -112,7 +112,7 @@ sub file_process {
     }
 
     my $m = &meta_get($file);
-    return unless defined $m; # TODO this should never happen, so die
+    die "$file: internal error!" unless defined $m; # This should never happen™
     my %meta = %{$m};
 
     if ($mode_verify  and  defined $meta{md5}) { # Can verify
