@@ -82,14 +82,16 @@ sub item_process {
     if (-d $item) {
         return if (-e "$item/.rk.skip"  or  $no_recurse);
         return if (-l $item  and  $no_follow_dir_symlinks);
-        $quiet = 1 if -e "$item/.rk.quiet";
+
+        my %kids_quiet;
+        $quiet = &marker_inherit($item, $quiet, '.rk.quiet', \%kids_quiet);
 
         opendir(my $handle, $item) or die "$!: cannot open directory!";
         my @list = readdir($handle);
 
         foreach my $nested (@list) {
             next if $nested eq "."  or  $nested eq "..";
-            &item_process("$item/$nested", $quiet);
+            &item_process("$item/$nested", $quiet  ||  defined $kids_quiet{$nested});
         }
 
         closedir($handle);
@@ -219,4 +221,32 @@ sub meta_get() {
     delete @fields{'state', 'vtime'} unless defined $fields{state};
 
     return \%fields;
+}
+
+################################################################################
+# Read a file containing a set of items, one per line, into the keys of a hash
+sub marker_read() {
+    my ($marker_path, $hashref) = @_;
+
+    open my $fh, $marker_path or die $!;
+
+    while (<$fh>) {
+        next if /^#/; # Skip comment lines
+        $_ =~ s/^\\//; # Unescape backslashes (will need revising if/when items can be in subdirs)
+        chomp; # Remove newline
+        ${$hashref}{$_} = 0; # Dummy value so that the item is defined
+    }
+
+    close $fh;
+}
+
+sub marker_inherit {
+    my ($item_path, $inherited, $label_name, $ref_kids) = @_;
+
+    my $label_path = "$item_path/$label_name";
+
+    return 1 if $inherited  or  -z $label_path; # If this directory is marked, children are implicitly marked too
+
+    &marker_read($label_path, $ref_kids) if -e $label_path; # This dir is not marked, so we must look at child marks
+    return 0;
 }
