@@ -11,6 +11,7 @@ use Getopt::Lucid qw( :all );
 
 my @options_spec = (
     Switch( '--clear|-x')->doc('Clear metadata from extended attributes'    ),
+    Switch( '--quiet|-q')->doc('Suppress logging to stdout'                 ),
     Switch('--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
     Switch(  '--init|-i')->doc('Initialise files that are missing metadata' ),
     Switch('--verify|-v')->doc('Verify initialised files against metadata'  ),
@@ -27,6 +28,7 @@ my $mode_clear  = $options->get_clear ;
 my $mode_export = $options->get_export;
 my $mode_init   = $options->get_init  ;
 my $mode_verify = $options->get_verify;
+my $mode_quiet  = $options->get_quiet ;
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
@@ -44,7 +46,7 @@ foreach my $item (@ARGV) {
 }
 
 foreach my $item (@ARGV) {
-    &item_process($item);
+    &item_process($item, $mode_quiet);
 }
 
 exit(0);
@@ -75,18 +77,19 @@ EOF
 ################################################################################
 # Process a filesystem item
 sub item_process {
-    my ($item) = @_;
+    my ($item, $quiet) = @_;
 
     if (-d $item) {
         return if (-e "$item/.rk.skip"  or  $no_recurse);
         return if (-l $item  and  $no_follow_dir_symlinks);
+        $quiet = 1 if -e "$item/.rk.quiet";
 
         opendir(my $handle, $item) or die "$!: cannot open directory!";
         my @list = readdir($handle);
 
         foreach my $nested (@list) {
             next if $nested eq "."  or  $nested eq "..";
-            &item_process("$item/$nested");
+            &item_process("$item/$nested", $quiet);
         }
 
         closedir($handle);
@@ -95,20 +98,20 @@ sub item_process {
     }
 
     return if -l $item  and  $no_follow_file_symlinks;
-    return &file_process($item) if -f $item;
+    return &file_process($item, $quiet) if -f $item;
 }
 
 ################################################################################
 # This implements both initialisation and verification
 sub file_process {
-    my ($file) = @_;
+    my ($file, $quiet) = @_;
 
     if ($mode_clear) {
         foreach ('md5', 'htime', 'state', 'vtime') {
             &delfattr($file, "rk.$_");
         }
 
-        return &print_status($file, ' ', undef);
+        return &print_status($quiet, $file, ' ', undef);
     }
 
     my $m = &meta_get($file);
@@ -119,18 +122,18 @@ sub file_process {
         if (&verify_hash($file, $meta{md5})) {
             &setfattr($file, 'rk.state', 'V');
             &setfattr($file, 'rk.vtime', DateTime->now);
-            return &print_status($file, 'V', $meta{md5});
+            return &print_status($quiet, $file, 'V', $meta{md5});
         }
 
         &setfattr($file, 'rk.state', 'X');
-        return &print_status($file, 'X', $meta{md5});
+        return &print_status($quiet, $file, 'X', $meta{md5});
     }
 
     if ($mode_init  and  not defined $meta{md5}) { # Can initialise
-        return &print_status($file, 'N', &hash_and_store($file));
+        return &print_status($quiet, $file, 'N', &hash_and_store($file));
     }
 
-    &print_status($file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
+    &print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
 }
 
 ################################################################################
@@ -141,20 +144,20 @@ sub filename_for_output {
 }
 
 sub print_status {
-    my ($file, $status, $hash) = @_;
+    my ($quiet, $file, $status, $hash) = @_;
 
     if ($mode_export) {
         printf(
             "%10u  %s  %s\n",
             -s $file,
             $hash // '????????????????????????????????',
-            &filename_for_output($file));
+            &filename_for_output($file)) unless $quiet;
     }
     else {
         printf(
             "%s %s\n",
             $status,
-            &filename_for_output($file));
+            &filename_for_output($file)) unless $quiet;
     }
 }
 
