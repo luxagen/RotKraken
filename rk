@@ -24,6 +24,9 @@ my $options = Getopt::Lucid->getopt(\@options_spec, {strict => 1})->validate();
 
 usage() and exit(0) if $options->get_help;
 
+STDOUT->autoflush(1);
+STDERR->autoflush(1);
+
 my $mode_clear  = $options->get_clear ;
 my $mode_export = $options->get_export;
 my $mode_init   = $options->get_init  ;
