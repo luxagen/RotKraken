@@ -10,12 +10,12 @@ use Digest::MD5::File qw(file_md5_hex);
 use Getopt::Lucid qw( :all );
 
 my @options_spec = (
-    Switch( '--clear|-x')->doc('Clear metadata from extended attributes'    ),
-    Switch( '--quiet|-q')->doc('Suppress logging to stdout'                 ),
-    Switch('--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
-    Switch(  '--init|-i')->doc('Initialise files that are missing metadata' ),
-    Switch('--verify|-v')->doc('Verify initialised files against metadata'  ),
-    Switch(  '--help|-h')->doc('Print usage (this)'                         ),
+	Switch( '--clear|-x')->doc('Clear metadata from extended attributes'    ),
+	Switch( '--quiet|-q')->doc('Suppress logging to stdout'                 ),
+	Switch('--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
+	Switch(  '--init|-i')->doc('Initialise files that are missing metadata' ),
+	Switch('--verify|-v')->doc('Verify initialised files against metadata'  ),
+	Switch(  '--help|-h')->doc('Print usage (this)'                         ),
 );
 
 # read config in a way that means we can output usage info
@@ -38,28 +38,28 @@ my $no_follow_file_symlinks = 1;
 my $no_follow_dir_symlinks = 1;
 
 if ($mode_clear and ($mode_init or $mode_verify)) {
-    die "Clear [-x] cannot be combined with initialise [-i] or verify [-v]!";
+	die "Clear [-x] cannot be combined with initialise [-i] or verify [-v]!";
 }
 
 # remaining non-option arguments should be the file/folder list to process
 print("Error: No paths specified.\n\n") and usage() and exit(1) unless @ARGV;
 foreach my $item (@ARGV) {
-    print "Path '$item' not found\n" and exit(2) unless -e $item;
-    print "Path '$item' is not a file\n" and exit(3) unless -f $item  or  -d $item;
+	print "Path '$item' not found\n" and exit(2) unless -e $item;
+	print "Path '$item' is not a file\n" and exit(3) unless -f $item  or  -d $item;
 }
 
 foreach my $item (@ARGV) {
-    &item_process($item, $mode_quiet);
+	&item_process($item, $mode_quiet);
 }
 
 exit(0);
 
 sub usage {
-   print "RotKraken v1.0, copyright © 2020-2021 Luxagen\n\n";
+	print "RotKraken v1.0, copyright © 2020-2021 Luxagen\n\n";
 
-    print $options->usage();
+	print $options->usage();
 
-    print <<EOF
+	print <<EOF
         arguments: the list of paths to process
 
 Status characters:
@@ -80,180 +80,180 @@ EOF
 ################################################################################
 # Process a filesystem item
 sub item_process {
-    my ($item, $quiet) = @_;
+	my ($item, $quiet) = @_;
 
-    if (-d $item) {
-        return if (-z "$item/.rk.skip"  or  $no_recurse); # The first check could be done later but this makes skipping as fast as possible
-        return if (-l $item  and  $no_follow_dir_symlinks);
+	if (-d $item) {
+		return if -z "$item/.rk.skip"  or  $no_recurse; # The first check could be done later but this makes skipping as fast as possible
+		return if -l $item  and  $no_follow_dir_symlinks;
 
-        my (%kids_quiet, %kids_skip);
-        $quiet = &marker_inherit($item, $quiet, '.rk.quiet', \%kids_quiet);
-        &marker_inherit($item, undef, '.rk.skip', \%kids_skip);
+		my (%kids_quiet, %kids_skip);
+		$quiet = &marker_inherit($item, $quiet, '.rk.quiet', \%kids_quiet);
+		&marker_inherit($item, undef, '.rk.skip', \%kids_skip);
 
-        opendir(my $handle, $item) or die "$!: cannot open directory!";
-        my @list = readdir($handle);
+		opendir(my $handle, $item) or die "$!: cannot open directory!";
+		my @list = readdir($handle);
 
-        $item =~ s/\/$//; # Remove any trailing slash before concatenating
+		$item =~ s/\/$//; # Remove any trailing slash before concatenating
 
-        foreach my $nested (@list) {
-            next if $nested eq "."  or  $nested eq "..";
-            next if exists $kids_skip{$nested};
-            &item_process("$item/$nested", $quiet  ||  defined $kids_quiet{$nested});
-        }
+		foreach my $nested (@list) {
+			next if $nested eq "."  or  $nested eq "..";
+			next if exists $kids_skip{$nested};
+			&item_process("$item/$nested", $quiet  ||  defined $kids_quiet{$nested});
+		}
 
-        closedir($handle);
+		closedir($handle);
 
-        return;
-    }
+		return;
+	}
 
-    return if -l $item  and  $no_follow_file_symlinks;
-    return &file_process($item, $quiet) if -f $item;
+	return if -l $item  and  $no_follow_file_symlinks;
+	return &file_process($item, $quiet) if -f $item;
 }
 
 ################################################################################
 # This implements both initialisation and verification
 sub file_process {
-    my ($file, $quiet) = @_;
+	my ($file, $quiet) = @_;
 
-    if ($mode_clear) {
-        foreach ('md5', 'htime', 'state', 'vtime') {
-            &delfattr($file, "rk.$_");
-        }
+	if ($mode_clear) {
+		foreach ('md5', 'htime', 'state', 'vtime') {
+			&delfattr($file, "rk.$_");
+		}
 
-        return &print_status($quiet, $file, ' ', undef);
-    }
+		return &print_status($quiet, $file, ' ', undef);
+	}
 
-    my $m = &meta_get($file);
-    die "$file: internal error!" unless defined $m; # This should never happen™
-    my %meta = %{$m};
+	my $m = &meta_get($file);
+	 die "$file: internal error!" unless defined $m; # This should never happen™
+	my %meta = %{$m};
 
-    if ($mode_verify  and  defined $meta{md5}) { # Can verify
-        if (&verify_hash($file, $meta{md5})) {
-            &setfattr($file, 'rk.state', 'V');
-            &setfattr($file, 'rk.vtime', DateTime->now);
-            return &print_status($quiet, $file, 'V', $meta{md5});
-        }
+	if ($mode_verify  and  defined $meta{md5}) { # Can verify
+		if (&verify_hash($file, $meta{md5})) {
+			&setfattr($file, 'rk.state', 'V');
+			&setfattr($file, 'rk.vtime', DateTime->now);
+			return &print_status($quiet, $file, 'V', $meta{md5});
+		}
 
-        &setfattr($file, 'rk.state', 'X');
-        return &print_status($quiet, $file, 'X', $meta{md5});
-    }
+		&setfattr($file, 'rk.state', 'X');
+		return &print_status($quiet, $file, 'X', $meta{md5});
+	}
 
-    if ($mode_init  and  not defined $meta{md5}) { # Can initialise
-        return &print_status($quiet, $file, 'N', &hash_and_store($file));
-    }
+	if ($mode_init  and  not defined $meta{md5}) { # Can initialise
+		return &print_status($quiet, $file, 'N', &hash_and_store($file));
+	}
 
-    &print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
+	&print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
 }
 
 ################################################################################
 # HELPERS
 
 sub filename_for_output {
-    return $_[0] =~ s/\n/\\n/gr;
+	return $_[0] =~ s/\n/\\n/gr;
 }
 
 sub print_status {
-    my ($quiet, $file, $status, $hash) = @_;
+	my ($quiet, $file, $status, $hash) = @_;
 
-    if ($mode_export) {
-        printf(
-            "%10u  %s  %s\n",
-            -s $file,
-            $hash // '????????????????????????????????',
-            &filename_for_output($file)) unless $quiet;
-    }
-    else {
-        printf(
-            "%s %s\n",
-            $status,
-            &filename_for_output($file)) unless $quiet;
-    }
+	if ($mode_export) {
+		printf(
+			"%10u  %s  %s\n",
+			-s $file,
+			$hash // '????????????????????????????????',
+			&filename_for_output($file)) unless $quiet;
+	}
+	else {
+		printf(
+			"%s %s\n",
+			$status,
+			&filename_for_output($file)) unless $quiet;
+	}
 }
 
 ################################################################################
 # Store the supplied hash into a file's metadata
 sub store_hash {
-    my ($file, $hash) = @_;
+	my ($file, $hash) = @_;
 
-    &setfattr($file, 'rk.md5', $hash);
-    &setfattr($file, 'rk.htime', DateTime->now);
+	&setfattr($file, 'rk.md5', $hash);
+	&setfattr($file, 'rk.htime', DateTime->now);
 }
 
 ################################################################################
 # Hash the file and write metadata
 sub hash_and_store {
-    my ($file) = @_;
-    my $hash = &hash_content($file);
-    &store_hash($file, $hash) if defined $hash;
-    return $hash;
+	my ($file) = @_;
+	my $hash = &hash_content($file);
+	&store_hash($file, $hash) if defined $hash;
+	return $hash;
 }
 
 ################################################################################
 # Read back a hash from a file and compare
 sub verify_hash {
-    my ($file, $stored) = @_;
-    return &hash_content($file) eq $stored;
+	my ($file, $stored) = @_;
+	return &hash_content($file) eq $stored;
 }
 
 ################################################################################
 # Hash the file and return the resulting hash
 sub hash_content {
-    my ($file) = @_;
-    return &file_md5_hex($file);
+	my ($file) = @_;
+	return &file_md5_hex($file);
 }
 
 ################################################################################
 # Retrieve metadata from a file's extended attributes
 # TODO deduplicate with the version in the tests file
 sub meta_get() {
-    my ($file) = @_;
+	my ($file) = @_;
 
-    my $out;
+	my $out;
 
-    my %fields;
+	my %fields;
 
-    foreach my $key ('md5', 'htime', 'state', 'vtime') {
-        my $value = &getfattr($file, "rk.$key");
-        $fields{$key} = $value if defined $value;
-    }
+	foreach my $key ('md5', 'htime', 'state', 'vtime') {
+		my $value = &getfattr($file, "rk.$key");
+		$fields{$key} = $value if defined $value;
+	}
 
-    # Individual validation
-    die 'Bad hash!'  if defined $fields{md5}    and  $fields{md5}   !~ /^[\da-f]{32}$/;
-    die 'Bad htime!' if defined $fields{htime}  and  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
-    die 'Bad state!' if defined $fields{state}  and  $fields{state} !~ /[VX]/;
-    die 'Bad htime!' if defined $fields{vtime}  and  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+	# Individual validation
+	die 'Bad hash!'  if defined $fields{md5}    and  $fields{md5}   !~ /^[\da-f]{32}$/;
+	die 'Bad htime!' if defined $fields{htime}  and  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+	die 'Bad state!' if defined $fields{state}  and  $fields{state} !~ /[VX]/;
+	die 'Bad htime!' if defined $fields{vtime}  and  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
-    # Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
-    delete @fields{'md5', 'htime', 'state', 'vtime'} unless  defined $fields{md5} and defined $fields{htime};
-    delete @fields{'state', 'vtime'} unless defined $fields{state};
+	# Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
+	delete @fields{'md5', 'htime', 'state', 'vtime'} unless  defined $fields{md5} and defined $fields{htime};
+	delete @fields{'state', 'vtime'} unless defined $fields{state};
 
-    return \%fields;
+	return \%fields;
 }
 
 ################################################################################
 # Read a file containing a set of items, one per line, into the keys of a hash
 sub marker_read() {
-    my ($marker_path, $hashref) = @_;
+	my ($marker_path, $hashref) = @_;
 
-    open my $fh, $marker_path or die $!;
+	open my $fh, $marker_path or die $!;
 
-    while (<$fh>) {
-        next if /^#/; # Skip comment lines
-        $_ =~ s/^\\//; # Unescape backslashes (will need revising if/when items can be in subdirs)
-        chomp; # Remove newline
-        ${$hashref}{$_} = 0; # Dummy value so that the item is defined
-    }
+	while (<$fh>) {
+		next if /^#/; # Skip comment lines
+		$_ =~ s/^\\//; # Unescape backslashes (will need revising if/when items can be in subdirs)
+		chomp; # Remove newline
+		${$hashref}{$_} = 0; # Dummy value so that the item is defined
+	}
 
-    close $fh;
+	close $fh;
 }
 
 sub marker_inherit {
-    my ($item_path, $inherited, $label_name, $ref_kids) = @_;
+	my ($item_path, $inherited, $label_name, $ref_kids) = @_;
 
-    my $label_path = "$item_path/$label_name";
+	my $label_path = "$item_path/$label_name";
 
-    return 1 if $inherited  or  -z $label_path; # If this directory is marked, children are implicitly marked too
+	return 1 if $inherited  or  -z $label_path; # If this directory is marked, children are implicitly marked too
 
-    &marker_read($label_path, $ref_kids) if -e $label_path; # This dir is not marked, so we must look at child marks
-    return 0;
+	&marker_read($label_path, $ref_kids) if -e $label_path; # This dir is not marked, so we must look at child marks
+	return 0;
 }

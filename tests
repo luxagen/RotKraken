@@ -77,7 +77,7 @@ sub test_nx() {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-    unlink "$base/$f1";
+	unlink "$base/$f1";
 }
 
 sub test_nv() {
@@ -123,7 +123,7 @@ sub test_nv() {
 	&is($meta{state},'X');
 	&ok($meta{vtime} eq $last_vtime);
 
-    unlink "$base/$f1";
+	unlink "$base/$f1";
 }
 
 sub test_iv() {
@@ -163,7 +163,7 @@ sub test_iv() {
 	&is($meta{md5},$h2);
 	&ok($meta{htime} gt $htime);
 
-    unlink "$base/$f1", "$base/$f2";
+	unlink "$base/$f1", "$base/$f2";
 }
 
 sub test_e {
@@ -191,7 +191,7 @@ sub test_e {
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
-    unlink "$base/$f1";
+	unlink "$base/$f1";
 }
 
 sub test_l {
@@ -251,14 +251,14 @@ sub test_r() {
 
 	&is_deeply(\@got,\@expected);
 
-    rmtree "$base/dir1";
+	rmtree "$base/dir1";
 }
 
 ################################################################################
 # Test helpers
 
 sub meta_get() {
-    my ($file) = @_;
+	my ($file) = @_;
 
 	my $out;
 
@@ -279,7 +279,7 @@ sub meta_get() {
 	delete @fields{'md5', 'htime', 'state', 'vtime'} if (not (defined $fields{md5} and defined $fields{htime}));
 	delete @fields{'state', 'vtime'} if (not defined $fields{state});
 
-    return \%fields;
+	return \%fields;
 }
 
 sub invoke {
