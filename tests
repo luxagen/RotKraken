@@ -35,12 +35,13 @@ my $p3 = "horrible3-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
 # Testing program
 
 foreach my $base (@ARGV) {
-	&test_nx($base);
-	&test_nv($base);
-	&test_iv($base);
-	&test_e ($base);
-	&test_l ($base);
-	&test_r ($base);
+	&test_nx ($base);
+	&test_nv ($base);
+	&test_ivu($base);
+	&test_e  ($base);
+	&test_l  ($base);
+	&test_r  ($base);
+	&test_fut($base);
 }
 
 exit 0;
@@ -112,8 +113,10 @@ sub test_nv() {
 
 	my $vtime = $meta{vtime};
 
-	sleep(1); # Make sure timestamp changes
+	# Simulate spontaneous corruption
+	my $mtime = file_mtime("$base/$f1");
 	&clobber_file("$base/$f1", $v2);
+	utime($mtime, $mtime, "$base/$f1");
 
 	&is(&invoke(1, 'v', "$base/$f1"), "X $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
@@ -126,7 +129,7 @@ sub test_nv() {
 	unlink "$base/$f1";
 }
 
-sub test_iv() {
+sub test_ivu() {
 	my ($base) = @_;
 	my %meta;
 
@@ -135,35 +138,59 @@ sub test_iv() {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 0);
 
-	&is(&invoke(0, 'iv', "$base/$f1"), "N $base/$p1\n");
+	# Init
+	&is(&invoke(0, 'ivu', "$base/$f1"), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 2);
 	&is($meta{md5}, $h1);
 	&is(length $meta{htime}, 19);
-
 	my $htime = $meta{htime};
 
-	&clobber_file("$base/$f1", $v3);
-	&write_file("$base/$f2", $v2);
-
-	%meta = %{&meta_get("$base/$f2")};
-	&is(scalar keys %meta, 0);
-
-	sleep(1); # Make sure timestamp changes
-	&is(
-		&invoke(1, 'iv', "$base/$f1", "$base/$f2"),
-		"X $base/$p1\nN $base/$p2\n");
+	# Verify
+	&is(&invoke(0, 'ivu', "$base/$f1"), "V $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta, 3);
+	&is(scalar keys %meta, 4);
 	&is($meta{md5}, $h1);
 	&is($meta{htime}, $htime);
-	&is($meta{state}, 'X');
-	%meta = %{&meta_get("$base/$f2")};
-	&is(scalar keys %meta, 2);
-	&is($meta{md5}, $h2);
-	&cmp_ok($meta{htime}, 'gt', $htime);
+	&is($meta{state}, 'V');
+	&cmp_ok($meta{vtime}, 'ge', $htime);
 
-	unlink "$base/$f1", "$base/$f2";
+	my $vtime = $meta{vtime};
+
+	# Verify: will fail stale
+	sleep(1); # Make sure timestamp changes
+	&clobber_file("$base/$f1", $v2);
+	&is(&invoke(1, 'iv', "$base/$f1"), "S $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'V');
+	&is($meta{vtime}, $vtime);
+
+	# Update
+	&clobber_file("$base/$f1", $v2);
+	&is(&invoke(0, 'ivu', "$base/$f1"), "U $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h2);
+	&cmp_ok($meta{htime}, 'gt', $vtime);
+	&is($meta{state}, 'V');
+	&is($meta{vtime}, $vtime);
+
+	$htime = $meta{htime};
+
+	sleep(1); # Make sure timestamp changes
+	# Verify again
+	&is(&invoke(0, 'ivu', "$base/$f1"), "V $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h2);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'V');
+	&cmp_ok($meta{vtime}, 'ge', $htime);
+
+	unlink "$base/$f1";
 }
 
 sub test_e {
@@ -254,6 +281,63 @@ sub test_r() {
 	rmtree "$base/dir1";
 }
 
+sub test_fut {
+	my ($base) = @_;
+	my %meta;
+
+	my $goodTime = time;
+	my $badTime = 9999999999;
+
+	# Create test file with future mtime
+	&write_file("$base/$f1", $v1);
+	utime($badTime, $badTime, "$base/$f1");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 0);
+
+	# Init should work
+	&is(&invoke(0, 'i', ("$base/$f1")), "N $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is(length $meta{htime}, 19);
+	my $htime = $meta{htime};
+
+	# Verify should error
+	&is(&invoke(1, 'v', ("$base/$f1")), "! $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+
+	# Verify should work with a sensible mtime
+	utime($goodTime, $goodTime, "$base/$f1");
+	&is(&invoke(0, 'v', ("$base/$f1")), "V $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'V');
+	&cmp_ok($meta{vtime}, 'ge', $htime);
+	my $vtime = $meta{vtime};
+
+	# Update should error
+	utime($badTime, $badTime, "$base/$f1");
+	&is(&invoke(1, 'u', ("$base/$f1")), "! $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'V');
+	&is($meta{vtime}, $vtime);
+
+	# Verify should still work
+	&is(&invoke(0, 'x', ("$base/$f1")), "  $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 0);
+
+	unlink "$base/$f1";
+}
+
 ################################################################################
 # Test helpers
 
@@ -280,6 +364,15 @@ sub meta_get() {
 	delete @fields{'state', 'vtime'} unless defined $fields{state};
 
 	return \%fields;
+}
+
+sub file_mtime {
+	my ($file) = @_;
+
+	my @stat = (stat($file));
+	die "$file: cannot stat!" unless scalar(@stat) > 9; # This should never happen™
+
+	return $stat[9];
 }
 
 sub invoke {

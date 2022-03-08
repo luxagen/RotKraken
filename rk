@@ -16,6 +16,7 @@ my @options_spec = (
 	Switch( '--quiet|-q')->doc('Suppress logging to stdout'                 ),
 	Switch('--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
 	Switch(  '--init|-i')->doc('Initialise files that are missing metadata' ),
+	Switch('--update|-u')->doc('Update metadata for changed files'          ),
 	Switch('--verify|-v')->doc('Verify initialised files against metadata'  ),
 	Switch(  '--help|-h')->doc('Print usage (this)'                         ),
 );
@@ -32,6 +33,7 @@ STDERR->autoflush(1);
 my $mode_clear  = $options->get_clear ;
 my $mode_export = $options->get_export;
 my $mode_init   = $options->get_init  ;
+my $mode_update = $options->get_update;
 my $mode_verify = $options->get_verify;
 my $mode_quiet  = $options->get_quiet ;
 
@@ -113,6 +115,17 @@ sub item_process {
 }
 
 ################################################################################
+# Get a file's mtime as a DateTime
+sub file_mtime {
+	my ($file) = @_;
+
+	my @stat = (stat($file));
+	die "$file: cannot stat!" unless scalar(@stat) > 9; # This should never happen™
+
+	return DateTime->from_epoch(epoch => $stat[9]);
+}
+
+################################################################################
 # This implements both initialisation and verification
 sub file_process {
 	my ($file, $quiet) = @_;
@@ -132,16 +145,35 @@ sub file_process {
 	unless (defined $meta{md5}) {
 		return &print_status($quiet, $file, 'N', &hash_and_store($file)) if $mode_init;
 	}
-	elsif ($mode_verify) { # Can verify
-		if (&verify_hash($file, $meta{md5})) {
-			&setfattr($file, 'rk.state', 'V');
-			&setfattr($file, 'rk.vtime', DateTime->now);
-			return &print_status($quiet, $file, 'V', $meta{md5});
+	elsif ($mode_update or $mode_verify) { # Extra outer guard for efficiency
+		my $mtime = &file_mtime($file);
+
+		if ($mtime gt DateTime->now) {
+			++$errorCount;
+			return &print_status($quiet, $file, '!', $meta{md5}) if $mtime gt DateTime->now->iso8601;
 		}
 
-		++$errorCount;
-		&setfattr($file, 'rk.state', 'X');
-		return &print_status($quiet, $file, 'X', $meta{md5});
+		if ($mode_update) {
+			return &print_status($quiet, $file, 'U', &hash_and_store($file, \%meta)) if $mtime gt $meta{htime};
+		}
+
+		if ($mode_verify) {
+			# Skip file if stale
+			if ($mtime gt $meta{htime}) {
+				++$errorCount;
+				return &print_status($quiet, $file, 'S', $meta{md5});
+			}
+
+			if (&verify_hash($file, $meta{md5})) {
+				&setfattr($file, 'rk.state', 'V');
+				&setfattr($file, 'rk.vtime', DateTime->now);
+				return &print_status($quiet, $file, 'V', $meta{md5});
+			}
+
+			++$errorCount;
+			&setfattr($file, 'rk.state', 'X');
+			return &print_status($quiet, $file, 'X', $meta{md5});
+		}
 	}
 
 	return &print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
@@ -161,7 +193,7 @@ sub print_status {
 		printf(
 			"%10u  %s  %s\n",
 			-s $file,
-			$hash // '????????????????????????????????',
+			('!' ne $status)  ?  $hash // '????????????????????????????????'  :  '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
 			&filename_for_output($file)) unless $quiet;
 	}
 	else {
