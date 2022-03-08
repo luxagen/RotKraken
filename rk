@@ -127,7 +127,10 @@ sub file_process {
 	 die "$file: internal error!" unless defined $m; # This should never happen™
 	my %meta = %{$m};
 
-	if ($mode_verify  and  defined $meta{md5}) { # Can verify
+	unless (defined $meta{md5}) {
+		return &print_status($quiet, $file, 'N', &hash_and_store($file)) if $mode_init;
+	}
+	elsif ($mode_verify) { # Can verify
 		if (&verify_hash($file, $meta{md5})) {
 			&setfattr($file, 'rk.state', 'V');
 			&setfattr($file, 'rk.vtime', DateTime->now);
@@ -136,10 +139,6 @@ sub file_process {
 
 		&setfattr($file, 'rk.state', 'X');
 		return &print_status($quiet, $file, 'X', $meta{md5});
-	}
-
-	if ($mode_init  and  not defined $meta{md5}) { # Can initialise
-		return &print_status($quiet, $file, 'N', &hash_and_store($file));
 	}
 
 	return &print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
