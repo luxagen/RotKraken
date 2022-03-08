@@ -142,7 +142,7 @@ sub file_process {
 		return &print_status($quiet, $file, 'N', &hash_and_store($file));
 	}
 
-	&print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
+	return &print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
 }
 
 ################################################################################
