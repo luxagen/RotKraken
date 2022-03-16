@@ -54,28 +54,28 @@ sub test_nx() {
 	&write_file("$base/$f1", $v1);
 
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,0);
+	&is(scalar keys %meta, 0);
 
-	&is(&invoke('i', ("$base/$f1")), "N $base/$p1\n");
+	&is(&invoke('i', "$base/$f1"), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19);
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is(length $meta{htime}, 19);
 
 	my $htime = $meta{htime};
 
-	&is(&invoke('i', ("$base/$f1")), "? $base/$p1\n");
+	&is(&invoke('i', "$base/$f1"), "? $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h1);
-	&ok($meta{htime} eq $htime);
-
-	&clobber_file("$base/$f1", $v2);
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
 
 	sleep(1); # Make sure timestamp changes
-	&is(&invoke('x', ("$base/$f1")), "  $base/$p1\n");
+	&clobber_file("$base/$f1", $v2);
+
+	&is(&invoke('x', "$base/$f1"), "  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,0);
+	&is(scalar keys %meta, 0);
 
 	unlink "$base/$f1";
 }
@@ -87,41 +87,41 @@ sub test_nv() {
 	&write_file("$base/$f1", $v1);
 
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,0);
+	&is(scalar keys %meta, 0);
 
-	&is(&invoke('v', ("$base/$f1")), "  $base/$p1\n");
+	&is(&invoke('v', "$base/$f1"), "  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,0);
+	&is(scalar keys %meta, 0);
 
-	&is(&invoke('i', ("$base/$f1")), "N $base/$p1\n");
+	&is(&invoke('i', "$base/$f1"), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19);
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is(length $meta{htime}, 19);
 
 	my $htime = $meta{htime};
 
 	sleep(1); # Make sure timestamp changes
-	&is(&invoke('v', ("$base/$f1")), "V $base/$p1\n");
+	&is(&invoke('v', "$base/$f1"), "V $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,4);
-	&is($meta{md5},$h1);
-	&is($meta{htime},$htime);
-	&is($meta{state},'V');
-	&ok($meta{vtime} gt $meta{htime});
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'V');
+	&cmp_ok($meta{vtime}, 'gt', $htime);
 
-	my $last_vtime = $meta{vtime};
-
-	&clobber_file("$base/$f1", $v2);
+	my $vtime = $meta{vtime};
 
 	sleep(1); # Make sure timestamp changes
-	&is(&invoke('v', ("$base/$f1")), "X $base/$p1\n");
+	&clobber_file("$base/$f1", $v2);
+
+	&is(&invoke('v', "$base/$f1"), "X $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,4);
-	&is($meta{md5},$h1);
-	&is($meta{htime},$htime);
-	&is($meta{state},'X');
-	&ok($meta{vtime} eq $last_vtime);
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'X');
+	&is($meta{vtime}, $vtime);
 
 	unlink "$base/$f1";
 }
@@ -133,13 +133,13 @@ sub test_iv() {
 	&write_file("$base/$f1", $v1);
 
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,0);
+	&is(scalar keys %meta, 0);
 
-	&is(&invoke('iv', ("$base/$f1")), "N $base/$p1\n");
+	&is(&invoke('iv', "$base/$f1"), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h1);
-	&is(length($meta{htime}),19);
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is(length $meta{htime}, 19);
 
 	my $htime = $meta{htime};
 
@@ -147,21 +147,21 @@ sub test_iv() {
 	&write_file("$base/$f2", $v2);
 
 	%meta = %{&meta_get("$base/$f2")};
-	&is(scalar keys %meta,0);
+	&is(scalar keys %meta, 0);
 
 	sleep(1); # Make sure timestamp changes
 	&is(
-		&invoke('iv', ("$base/$f1", "$base/$f2")),
+		&invoke('iv', "$base/$f1", "$base/$f2"),
 		"X $base/$p1\nN $base/$p2\n");
 	%meta = %{&meta_get("$base/$f1")};
-	&is(scalar keys %meta,3);
-	&is($meta{md5},$h1);
-	&is($meta{htime},$htime);
-	&is($meta{state},'X');
+	&is(scalar keys %meta, 3);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'X');
 	%meta = %{&meta_get("$base/$f2")};
-	&is(scalar keys %meta,2);
-	&is($meta{md5},$h2);
-	&ok($meta{htime} gt $htime);
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h2);
+	&cmp_ok($meta{htime}, 'gt', $htime);
 
 	unlink "$base/$f1", "$base/$f2";
 }
@@ -175,17 +175,17 @@ sub test_e {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('e', ("$base/$f1")), "        26  ????????????????????????????????  $base/$p1\n");
+	&is(&invoke('e', "$base/$f1"), "        26  ????????????????????????????????  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('iv', ("$base/$f1")), "N $base/$p1\n");
+	&is(&invoke('iv', "$base/$f1"), "N $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
 	&is(length($meta{htime}),19);
 
-	&is(&invoke('e', ("$base/$f1")), "        26  $h1  $base/$p1\n");
+	&is(&invoke('e', "$base/$f1"), "        26  $h1  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta,2);
 	&is($meta{md5},$h1);
@@ -208,21 +208,21 @@ sub test_l {
 	%meta = %{&meta_get("$base/$f2")};
 	&is(scalar keys %meta,0);
 
-	&is(&invoke('i', ("$base/$f2")), '');
+	&is(&invoke('i', "$base/$f2"), '');
 	%meta = %{&meta_get("$base/$f2")};
 	&is(scalar keys %meta,0);
 
 	# These are for when no_follow_file_symlinks=0
-#	&is(scalar keys %meta,2);
-#	&is($meta{md5},$h1);
-#	&is(length($meta{htime}),19);
+#	&is(scalar keys %meta, 2);
+#	&is($meta{md5}, $h1);
+#	&is(length($meta{htime}), 19);
 
 #	my $htime = $meta{htime};
 
 #	%meta = %{&meta_get("$base/$f1")};
-#	&is(scalar keys %meta,2);
-#	&is($meta{md5},$h1);
-#	&ok($meta{htime} eq $htime);
+#	&is(scalar keys %meta, 2);
+#	&is($meta{md5}, $h1);
+#	&is($meta{htime}, $htime);
 
 	unlink "$base/$f1","$base/$f2";
 }
@@ -270,14 +270,14 @@ sub meta_get() {
 	}
 
 	# Individual validation
-	not defined $fields{md5}  or  $fields{md5} =~ /^[\da-f]{32}$/  or  die 'Bad hash!';
-	not defined $fields{htime}  or  $fields{htime} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/  or  die 'Bad htime!';
-	not defined $fields{state}  or  $fields{state} =~ /[VX]/  or  die 'Bad state!';
-	not defined $fields{vtime}  or  $fields{vtime} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/  or  die 'Bad htime!';
+	die 'Bad hash!'  if defined $fields{md5}  and  $fields{md5} !~ /^[\da-f]{32}$/;
+	die 'Bad htime!' if defined $fields{htime}  and  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+	die 'Bad state!' if defined $fields{state}  and  $fields{state} !~ /[VX]/;
+	die 'Bad htime!' if defined $fields{vtime}  and  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
 	# Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
-	delete @fields{'md5', 'htime', 'state', 'vtime'} if (not (defined $fields{md5} and defined $fields{htime}));
-	delete @fields{'state', 'vtime'} if (not defined $fields{state});
+	delete @fields{'md5', 'htime', 'state', 'vtime'} unless defined $fields{md5}  and  defined $fields{htime};
+	delete @fields{'state', 'vtime'} unless defined $fields{state};
 
 	return \%fields;
 }
