@@ -9,6 +9,8 @@ use File::ExtAttr ':all';
 use Digest::MD5::File qw(file_md5_hex);
 use Getopt::Lucid qw( :all );
 
+our $errorCount = 0;
+
 my @options_spec = (
 	Switch( '--clear|-x')->doc('Clear metadata from extended attributes'    ),
 	Switch( '--quiet|-q')->doc('Suppress logging to stdout'                 ),
@@ -52,7 +54,7 @@ foreach my $item (@ARGV) {
 	&item_process($item, $mode_quiet);
 }
 
-exit(0);
+exit($errorCount > 0);
 
 sub usage {
 	print "RotKraken v1.0, copyright © 2020-2021 Luxagen\n\n";
@@ -137,6 +139,7 @@ sub file_process {
 			return &print_status($quiet, $file, 'V', $meta{md5});
 		}
 
+		++$errorCount;
 		&setfattr($file, 'rk.state', 'X');
 		return &print_status($quiet, $file, 'X', $meta{md5});
 	}

@@ -115,7 +115,7 @@ sub test_nv() {
 	sleep(1); # Make sure timestamp changes
 	&clobber_file("$base/$f1", $v2);
 
-	&is(&invoke(0, 'v', "$base/$f1"), "X $base/$p1\n");
+	&is(&invoke(1, 'v', "$base/$f1"), "X $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 4);
 	&is($meta{md5}, $h1);
@@ -151,7 +151,7 @@ sub test_iv() {
 
 	sleep(1); # Make sure timestamp changes
 	&is(
-		&invoke(0, 'iv', "$base/$f1", "$base/$f2"),
+		&invoke(1, 'iv', "$base/$f1", "$base/$f2"),
 		"X $base/$p1\nN $base/$p2\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 3);
