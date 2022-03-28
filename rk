@@ -94,7 +94,12 @@ sub item_process {
 		$quiet = &marker_inherit($item, $quiet, '.rk.quiet', \%kids_quiet);
 		&marker_inherit($item, undef, '.rk.skip', \%kids_skip);
 
-		opendir(my $handle, $item) or die "$!: cannot open directory!";
+		my $handle;
+		unless (opendir($handle, $item)) {
+			warn "$item: cannot open directory\n";
+			return undef;
+		}
+
 		my @list = readdir($handle);
 
 		$item =~ s/\/$//; # Remove any trailing slash before concatenating
@@ -107,10 +112,10 @@ sub item_process {
 
 		closedir($handle);
 
-		return;
+		return 1;
 	}
 
-	return if -l $item  and  $no_follow_file_symlinks;
+	return undef if -l $item  and  $no_follow_file_symlinks;
 	return &file_process($item, $quiet) if -f $item;
 }
 
@@ -120,7 +125,11 @@ sub file_mtime {
 	my ($file) = @_;
 
 	my @stat = (stat($file));
-	die "$file: cannot stat!" unless scalar(@stat) > 9; # This should never happen™
+
+	unless (scalar(@stat) > 9) {
+		warn "$file: cannot stat() mtime\n";
+		return undef;
+	}
 
 	return DateTime->from_epoch(epoch => $stat[9]);
 }
@@ -139,7 +148,9 @@ sub file_process {
 	}
 
 	my $m = &meta_get($file);
-	 die "$file: internal error!" unless defined $m; # This should never happen™
+
+	return undef unless defined $m;
+
 	my %meta = %{$m};
 
 	unless (defined $meta{md5}) {
@@ -147,6 +158,8 @@ sub file_process {
 	}
 	elsif ($mode_update or $mode_verify) { # Extra outer guard for efficiency
 		my $mtime = &file_mtime($file);
+
+		return undef unless defined $mtime;
 
 		if ($mtime gt DateTime->now) {
 			++$errorCount;
@@ -252,10 +265,19 @@ sub meta_get() {
 	}
 
 	# Individual validation
-	die 'Bad hash!'  if defined $fields{md5}    and  $fields{md5}   !~ /^[\da-f]{32}$/;
-	die 'Bad htime!' if defined $fields{htime}  and  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
-	die 'Bad state!' if defined $fields{state}  and  $fields{state} !~ /[VX]/;
-	die 'Bad htime!' if defined $fields{vtime}  and  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+	my ($bad_md5, $bad_htime, $bad_state, $bad_vtime) = (
+		defined $fields{md5}    &&  $fields{md5}   !~ /^[\da-f]{32}$/,
+		defined $fields{htime}  &&  $fields{htime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+		defined $fields{state}  &&  $fields{state} !~ /[VX]/,
+		defined $fields{vtime}  &&  $fields{vtime} !~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+	);
+
+	warn "$file: Bad hash \n" if $bad_md5;
+	warn "$file: Bad htime\n" if $bad_htime;
+	warn "$file: Bad state\n" if $bad_state;
+	warn "$file: Bad htime\n" if $bad_vtime;
+
+	return undef if $bad_md5 or $bad_htime or $bad_state or $bad_vtime;
 
 	# Collective validation: md5 and htime must appear together, and neither state nor vtime must appear without them
 	delete @fields{'md5', 'htime', 'state', 'vtime'} unless  defined $fields{md5} and defined $fields{htime};
@@ -269,7 +291,11 @@ sub meta_get() {
 sub marker_read() {
 	my ($marker_path, $hashref) = @_;
 
-	open my $fh, $marker_path or die $!;
+	my $fh;
+	unless (open $fh, $marker_path) {
+		warn "$marker_path: cannot read marker file\n";
+		return undef;
+	}
 
 	while (<$fh>) {
 		next if /^#/; # Skip comment lines
