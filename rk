@@ -239,7 +239,7 @@ sub hash_and_store {
 # Read back a hash from a file and compare
 sub verify_hash {
 	my ($file, $stored) = @_;
-	return &hash_content($file) eq $stored;
+	return &hash_content($file) eq ($stored // '');
 }
 
 ################################################################################
