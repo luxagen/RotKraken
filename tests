@@ -22,14 +22,14 @@ my $h2 = '437bba8e0bf58337674f4539e75186ac';
 my $h3 = '781e5e245d69b566979b86e28d23f2c7';
 
 # Test filenames
-my $f1 = "horrible1-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
-my $f2 = "horrible2-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
-my $f3 = "horrible3-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
+my $f1 = "horrible1-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
+my $f2 = "horrible2-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
+my $f3 = "horrible3-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
 
 # Printed versions of the above from stdout
-my $p1 = "horrible1-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
-my $p2 = "horrible2-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
-my $p3 = "horrible3-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile";
+my $p1 = "horrible1-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
+my $p2 = "horrible2-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
+my $p3 = "horrible3-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
 
 ################################################################################
 # Testing program

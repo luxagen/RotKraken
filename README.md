@@ -31,7 +31,7 @@ RotKraken is released under a "[GPL3](http://www.gnu.org/licenses/gpl-3.0.en.htm
 
 	Ubuntu:
 	```
-	sudo apt install libdatetime-perl libfile-extattr-perl libdigest-md5-file-perl libgetopt-lucid-perl
+	sudo apt install libdatetime-perl libfile-extattr-perl libgetopt-lucid-perl
 	```
 	CPAN:
 	```

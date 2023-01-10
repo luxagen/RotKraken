@@ -6,9 +6,10 @@ use warnings;
 
 use DateTime qw(now);
 use File::ExtAttr ':all';
-use Digest::MD5::File qw(file_md5_hex);
+use Digest::MD5;
 use Getopt::Lucid qw( :all );
 
+our $BLK = 1048576; # Block size for hashing loop
 our $errorCount = 0;
 
 my @options_spec = (
@@ -231,7 +232,7 @@ sub store_hash {
 sub hash_and_store {
 	my ($file) = @_;
 	my $hash = &hash_content($file);
-	&store_hash($file, $hash) if defined $hash;
+	&store_hash($file, $hash);
 	return $hash;
 }
 
@@ -246,7 +247,19 @@ sub verify_hash {
 # Hash the file and return the resulting hash
 sub hash_content {
 	my ($file) = @_;
-	return &file_md5_hex($file);
+
+	my $hasher = Digest::MD5->new;
+
+	open(my $in_fh,  "<", $file) || die;
+	binmode($in_fh) || die;
+	while (read($in_fh, my $buffer, $BLK)) {
+		$hasher->add($buffer);
+	}
+	close($in_fh) || die;
+
+	my $hash = $hasher->hexdigest;
+	die unless defined $hash;
+	return $hash;
 }
 
 ################################################################################
