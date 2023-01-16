@@ -24,23 +24,24 @@ my $f1 = "1 with space.testfile";
 my $f2 = "2 with space.testfile";
 my $f3 = "3 with space.testfile";
 
-my $fs = shift;
-
 ################################################################################
 # Testing program
 
-&test_nx();
-&test_nv();
-&test_a ();
-&test_e ();
-&test_l ();
-&test_r ();
+foreach my $fs (@ARGV) {
+	&test_nx($fs);
+	&test_nv($fs);
+	&test_a ($fs);
+	&test_e ($fs);
+	&test_l ($fs);
+	&test_r ($fs);
+}
 
 exit 0;
 
 ################################################################################
 
 sub test_nx() {
+	my ($fs) = @_;
 	my %meta;
 
 	&clobber_file("$fs/$f1", $v1);
@@ -73,6 +74,7 @@ sub test_nx() {
 }
 
 sub test_nv() {
+	my ($fs) = @_;
 	my %meta;
 
 	&clobber_file("$fs/$f1", $v1);
@@ -118,6 +120,7 @@ sub test_nv() {
 }
 
 sub test_a() {
+	my ($fs) = @_;
 	my %meta;
 
 	&clobber_file("$fs/$f1", $v1);
@@ -157,6 +160,7 @@ sub test_a() {
 }
 
 sub test_e {
+	my ($fs) = @_;
 	my %meta;
 
 	&clobber_file("$fs/$f1", $v1);
@@ -184,6 +188,7 @@ sub test_e {
 }
 
 sub test_l {
+	my ($fs) = @_;
 	my %meta;
 
 	&clobber_file("$fs/$f1", $v1);
@@ -213,6 +218,7 @@ sub test_l {
 }
 
 sub test_r() {
+	my ($fs) = @_;
 	my %meta;
 
 	make_path("$fs/dir1/dir2","$fs/dir1/dir3");
