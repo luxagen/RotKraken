@@ -13,13 +13,14 @@ our $BLK = 1048576; # Block size for hashing loop
 our $errorCount = 0;
 
 my @options_spec = (
-	Switch( '--clear|-x')->doc('Clear metadata from extended attributes'    ),
-	Switch( '--quiet|-q')->doc('Suppress logging to stdout'                 ),
-	Switch('--export|-e')->doc('Log files to stdout in `md5deep -zl` format'),
-	Switch(  '--init|-i')->doc('Initialise files that are missing metadata' ),
-	Switch('--update|-u')->doc('Update metadata for changed files'          ),
-	Switch('--verify|-v')->doc('Verify initialised files against metadata'  ),
-	Switch(  '--help|-h')->doc('Print usage (this)'                         ),
+	Switch(  '--clear|-x')->doc('Clear metadata from extended attributes'      ),
+	Switch(  '--quiet|-q')->doc('Suppress stdout logging'                      ),
+	Switch('--unquiet|-Q')->doc('Force stdout logging (ignore .rk.quiet files)'),
+	Switch( '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'  ),
+	Switch(   '--init|-i')->doc('Initialise files that are missing metadata'   ),
+	Switch( '--update|-u')->doc('Update metadata for changed files'            ),
+	Switch( '--verify|-v')->doc('Verify initialised files against metadata'    ),
+	Switch(   '--help|-h')->doc('Print usage (this)'                           ),
 );
 
 # read config in a way that means we can output usage info
@@ -31,12 +32,13 @@ usage() and exit(0) if $options->get_help;
 STDOUT->autoflush(1);
 STDERR->autoflush(1);
 
-my $mode_clear  = $options->get_clear ;
-my $mode_export = $options->get_export;
-my $mode_init   = $options->get_init  ;
-my $mode_update = $options->get_update;
-my $mode_verify = $options->get_verify;
-my $mode_quiet  = $options->get_quiet ;
+my $mode_clear    = $options->get_clear  ;
+my $mode_export   = $options->get_export ;
+my $mode_init     = $options->get_init   ;
+my $mode_update   = $options->get_update ;
+my $mode_verify   = $options->get_verify ;
+my $mode_quiet    = $options->get_quiet  ;
+our $mode_unquiet = $options->get_unquiet;
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
@@ -208,13 +210,13 @@ sub print_status {
 			"%10u  %s  %s\n",
 			-s $file,
 			('!' ne $status)  ?  $hash // '????????????????????????????????'  :  '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-			&filename_for_output($file)) unless $quiet;
+			&filename_for_output($file)) if   $mode_unquiet  or  not $quiet;
 	}
 	else {
 		printf(
 			"%s %s\n",
 			$status,
-			&filename_for_output($file)) unless $quiet;
+			&filename_for_output($file)) if   $mode_unquiet  or  not $quiet;
 	}
 }
 
