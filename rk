@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+use utf8;
 use strict;
 use warnings;
 
@@ -50,6 +51,8 @@ foreach my $item (@ARGV) {
 exit(0);
 
 sub usage {
+	print "RotKraken v1.0, copyright © 2020-2021 Luxagen\n\n";
+
 	print $options->usage();
 
 	print <<EOF
