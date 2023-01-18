@@ -1,0 +1,2 @@
+#!/bin/bash
+grep -v '^ok ' | grep -v '^1..' | grep -v '^Creating '

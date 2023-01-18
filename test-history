@@ -1,0 +1,3 @@
+#!/bin/bash
+export FILTER_BRANCH_SQUELCH_WARNING=1
+git filter-branch -f --tree-filter './run-tests' -- HEAD ^b70376090cab34e4a82495ab0a6974f84b03a35d
