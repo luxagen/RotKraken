@@ -11,7 +11,7 @@ Extended attributes can only be associated with regular files and directories. R
 
 ### Linux / NAS / macOS
 
-RotKraken can be used on all major Linux-supported filesystems that support extended attributes, including [NTFS](http://en.wikipedia.org/wiki/NTFS) via [NTFS-3G](http://en.wikipedia.org/wiki/NTFS-3G). Since most Linux-based NASes tend to support Perl, it should also work there. RK also works on macOS, whether HFS+ or APFS, although it has been known in the past to emit some spurious `stat`-related messages.
+RotKraken can be used on all major Linux-supported filesystems that support extended attributes, including [NTFS](http://en.wikipedia.org/wiki/NTFS) via [NTFS-3G](http://en.wikipedia.org/wiki/NTFS-3G). Since most Linux-based NASes tend to support Perl, it should also work there. RK also works on macOS, whether [HFS+](http://en.wikipedia.org/wiki/HFS_Plus) or [APFS](http://en.wikipedia.org/wiki/Apple_File_System), although it has been known to emit some spurious `stat`-related messages (please file an [issue]() if you see this). Additionally, the security features in recent versions of macOS will require you to grant "Full Disk Access" to Terminal.app, and may still restrict your ability to add RK metadata to system-owned files.
 
 ### Windows
 
