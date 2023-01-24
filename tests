@@ -90,6 +90,10 @@ sub test_nv() {
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 0);
 
+	&is(&invoke(0, 'V', "$base/$f1"), "  $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 0);
+
 	&is(&invoke(0, 'v', "$base/$f1"), "  $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 0);
@@ -103,6 +107,13 @@ sub test_nv() {
 	my $htime = $meta{htime};
 
 	sleep(1); # Make sure timestamp changes
+
+	&is(&invoke(0, 'V', "$base/$f1"), "V $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is(length $meta{htime}, 19);
+
 	&is(&invoke(0, 'v', "$base/$f1"), "V $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 4);
@@ -117,6 +128,14 @@ sub test_nv() {
 	my $mtime = file_mtime("$base/$f1");
 	&clobber_file("$base/$f1", $v2);
 	utime($mtime, $mtime, "$base/$f1");
+
+	&is(&invoke(1, 'V', "$base/$f1"), "X $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 4);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+	&is($meta{state}, 'V');
+	&cmp_ok($meta{vtime}, 'gt', $htime);
 
 	&is(&invoke(1, 'v', "$base/$f1"), "X $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
@@ -303,6 +322,12 @@ sub test_fut {
 	my $htime = $meta{htime};
 
 	# Verify should error
+	&is(&invoke(1, 'V', ("$base/$f1")), "! $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is(length $meta{htime}, 19);
+
 	&is(&invoke(1, 'v', ("$base/$f1")), "! $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 2);
@@ -311,6 +336,13 @@ sub test_fut {
 
 	# Verify should work with a sensible mtime
 	utime($goodTime, $goodTime, "$base/$f1");
+
+	&is(&invoke(0, 'V', ("$base/$f1")), "V $base/$p1\n");
+	%meta = %{&meta_get("$base/$f1")};
+	&is(scalar keys %meta, 2);
+	&is($meta{md5}, $h1);
+	&is($meta{htime}, $htime);
+
 	&is(&invoke(0, 'v', ("$base/$f1")), "V $base/$p1\n");
 	%meta = %{&meta_get("$base/$f1")};
 	&is(scalar keys %meta, 4);

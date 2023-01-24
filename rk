@@ -13,14 +13,15 @@ our $BLK = 1048576; # Block size for hashing loop
 our $errorCount = 0;
 
 my @options_spec = (
-	Switch(  '--clear|-x')->doc('Clear metadata from extended attributes'      ),
-	Switch(  '--quiet|-q')->doc('Suppress stdout logging'                      ),
-	Switch('--unquiet|-Q')->doc('Force stdout logging (ignore .rk.quiet files)'),
-	Switch( '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'  ),
-	Switch(   '--init|-i')->doc('Initialise files that are missing metadata'   ),
-	Switch( '--update|-u')->doc('Update metadata for changed files'            ),
-	Switch( '--verify|-v')->doc('Verify initialised files against metadata'    ),
-	Switch(   '--help|-h')->doc('Print usage (this)'                           ),
+	Switch(    '--clear|-x')->doc('Clear metadata from extended attributes'      ),
+	Switch(    '--quiet|-q')->doc('Suppress stdout logging'                      ),
+	Switch(  '--unquiet|-Q')->doc('Force stdout logging (ignore .rk.quiet files)'),
+	Switch(   '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'  ),
+	Switch(     '--init|-i')->doc('Initialise files that are missing metadata'   ),
+	Switch(   '--update|-u')->doc('Update metadata for changed files'            ),
+	Switch(   '--verify|-v')->doc('Verify initialised files against metadata'    ),
+	Switch('--verify-ro|-V')->doc('As --verify, but don\'t update metadata'      ),
+	Switch(     '--help|-h')->doc('Print usage (this)'                           ),
 );
 
 # read config in a way that means we can output usage info
@@ -32,20 +33,26 @@ usage() and exit(0) if $options->get_help;
 STDOUT->autoflush(1);
 STDERR->autoflush(1);
 
-my $mode_clear    = $options->get_clear  ;
-my $mode_export   = $options->get_export ;
-my $mode_init     = $options->get_init   ;
-my $mode_update   = $options->get_update ;
-my $mode_verify   = $options->get_verify ;
-my $mode_quiet    = $options->get_quiet  ;
-our $mode_unquiet = $options->get_unquiet;
+my $mode_clear    = $options->get_clear    ;
+my $mode_export   = $options->get_export   ;
+my $mode_init     = $options->get_init     ;
+my $mode_update   = $options->get_update   ;
+my $mode_verify   = $options->get_verify   ;
+my $mode_ro       = $options->get_verify_ro;
+my $mode_quiet    = $options->get_quiet    ;
+our $mode_unquiet = $options->get_unquiet  ;
 
 my $no_recurse = 0;
 my $no_follow_file_symlinks = 1;
 my $no_follow_dir_symlinks = 1;
 
+if ($mode_ro) {
+	die 'Read-only verify [-V] cannot be combined with verify [-v]!' if $mode_verify;
+	$mode_verify = 1;
+}
+
 if ($mode_clear and ($mode_init or $mode_verify)) {
-	die "Clear [-x] cannot be combined with initialise [-i] or verify [-v]!";
+	die 'Clear [-x] cannot be combined with initialise [-i] or verify [-v]!';
 }
 
 # remaining non-option arguments should be the file/folder list to process
@@ -181,7 +188,7 @@ sub file_process {
 			}
 
 			if (&verify_hash($file, $meta{md5})) {
-				unless (&setfattr($file, 'rk.state', 'V') and &setfattr($file, 'rk.vtime', DateTime->now)) {
+				unless ($mode_ro  or  &setfattr($file, 'rk.state', 'V') and &setfattr($file, 'rk.vtime', DateTime->now)) {
 					warn "$file: cannot update xattrs\n";
 					++$errorCount;
 				}
@@ -190,9 +197,11 @@ sub file_process {
 			}
 
 			++$errorCount;
-			unless (&setfattr($file, 'rk.state', 'X')) {
-				warn "$file: cannot update xattrs\n";
-				++$errorCount;
+			unless ($mode_ro) {
+				unless (&setfattr($file, 'rk.state', 'X')) {
+					warn "$file: cannot update xattrs\n";
+					++$errorCount;
+				}
 			}
 			return &print_status($quiet, $file, 'X', $meta{md5});
 		}

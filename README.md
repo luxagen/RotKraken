@@ -88,6 +88,9 @@ A file is stale when its modification timestamp is newer than its `rk -i` metada
 #### Verify
 `rk -v` checks the content of each initialised, non-stale file against its stored `rk -i` metadata by rehashing; successful verification will update the files' verification timestamps, but mismatches won't &mdash; this is so that a future version can print a timespan within which backups will contain a known-good copy of the file.
 
+#### Read-only verify
+`rk -V` works as `rk -v` with the exception that it doesn't perform any extended-attribute updates. This is most useful for read-only filesystems or snapshots.
+
 #### Clear
 `rk -x` will unconditionally remove metadata from files. There's rarely a good reason to do this, and it will break the "integrity chain" on the files.
 
