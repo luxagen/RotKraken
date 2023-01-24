@@ -181,13 +181,19 @@ sub file_process {
 			}
 
 			if (&verify_hash($file, $meta{md5})) {
-				&setfattr($file, 'rk.state', 'V');
-				&setfattr($file, 'rk.vtime', DateTime->now);
+				unless (&setfattr($file, 'rk.state', 'V') and &setfattr($file, 'rk.vtime', DateTime->now)) {
+					warn "$file: cannot update xattrs\n";
+					++$errorCount;
+				}
+
 				return &print_status($quiet, $file, 'V', $meta{md5});
 			}
 
 			++$errorCount;
-			&setfattr($file, 'rk.state', 'X');
+			unless (&setfattr($file, 'rk.state', 'X')) {
+				warn "$file: cannot update xattrs\n";
+				++$errorCount;
+			}
 			return &print_status($quiet, $file, 'X', $meta{md5});
 		}
 	}
@@ -225,8 +231,10 @@ sub print_status {
 sub store_hash {
 	my ($file, $hash) = @_;
 
-	&setfattr($file, 'rk.md5', $hash);
-	&setfattr($file, 'rk.htime', DateTime->now);
+	unless (&setfattr($file, 'rk.md5', $hash) and &setfattr($file, 'rk.htime', DateTime->now)) {
+		warn "$file: cannot set xattrs\n";
+		++$errorCount;
+	}
 }
 
 ################################################################################
@@ -271,6 +279,11 @@ sub meta_get() {
 	my ($file) = @_;
 
 	my $out;
+
+	unless (-r $file) {
+		warn "$file: not readable\n";
+		return undef;
+	}
 
 	my %fields;
 
