@@ -131,6 +131,24 @@ My standard workflow is:
 
 This method avoids reverifying the untouched stuff, but you probably want to fully reverify all of your copies once in a while too.
 
+### Independently auditing RK metadata
+
+To check the extended-attribute metadata:
+```
+$ getfattr --dump .gitignore
+# file: .gitignore
+user.rk.htime="2022-12-05T04:00:38"
+user.rk.md5="5d17b1a844d6383aa91ab0812cd1d4c1"
+user.rk.state="V"
+user.rk.vtime="2023-01-20T06:03:26"
+```
+
+To check a content hash:
+```
+$ md5sum .gitignore
+5d17b1a844d6383aa91ab0812cd1d4c1  .gitignore
+```
+
 ## Caveats, rationales and warnings
 
 **DANGER WILL ROBINSON**: `cp`, `mv`, `rsync`, and `tar` are all capable of preserving extended attributes but won't necessarily do it by default! Double-check your command-line options and run as `root` to be sure you're not throwing anything away in transit; `-a` can be useful for maximising preservation.
