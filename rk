@@ -97,35 +97,35 @@ sub item_process {
 
 	return undef if -l $item  and  $no_follow_symlinks;
 
-	if (-d $item) {
-		return if -z "$item/.rk.skip"  or  $no_recurse; # The first check could be done later but this makes skipping as fast as possible
+	return &file_process($item, $quiet) if -f $item;
 
-		my (%kids_quiet, %kids_skip);
-		$quiet = &marker_inherit($item, $quiet, '.rk.quiet', \%kids_quiet);
-		&marker_inherit($item, undef, '.rk.skip', \%kids_skip);
+	return unless -d $item;
 
-		my $handle;
-		unless (opendir($handle, $item)) {
-			warn "$item: cannot open directory\n";
-			return undef;
-		}
+	return if -z "$item/.rk.skip"  or  $no_recurse; # The first check could be done later but this makes skipping as fast as possible
 
-		my @list = readdir($handle);
+	my (%kids_quiet, %kids_skip);
+	$quiet = &marker_inherit($item, $quiet, '.rk.quiet', \%kids_quiet);
+	&marker_inherit($item, undef, '.rk.skip', \%kids_skip);
 
-		$item =~ s/\/$//; # Remove any trailing slash before concatenating
-
-		foreach my $nested (@list) {
-			next if $nested eq "."  or  $nested eq "..";
-			next if exists $kids_skip{$nested};
-			&item_process("$item/$nested", $quiet  ||  defined $kids_quiet{$nested});
-		}
-
-		closedir($handle);
-
-		return 1;
+	my $handle;
+	unless (opendir($handle, $item)) {
+		warn "$item: cannot open directory\n";
+		return undef;
 	}
 
-	return &file_process($item, $quiet) if -f $item;
+	my @list = readdir($handle);
+
+	$item =~ s/\/$//; # Remove any trailing slash before concatenating
+
+	foreach my $nested (@list) {
+		next if $nested eq "."  or  $nested eq "..";
+		next if exists $kids_skip{$nested};
+		&item_process("$item/$nested", $quiet  ||  defined $kids_quiet{$nested});
+	}
+
+	closedir($handle);
+
+	return 1;
 }
 
 ################################################################################
