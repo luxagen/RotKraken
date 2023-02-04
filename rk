@@ -43,8 +43,7 @@ my $mode_quiet    = $options->get_quiet    ;
 our $mode_unquiet = $options->get_unquiet  ;
 
 my $no_recurse = 0;
-my $no_follow_file_symlinks = 1;
-my $no_follow_dir_symlinks = 1;
+my $no_follow_symlinks = 1;
 
 if ($mode_ro) {
 	die 'Read-only verify [-V] cannot be combined with verify [-v]!' if $mode_verify;
@@ -96,9 +95,10 @@ EOF
 sub item_process {
 	my ($item, $quiet) = @_;
 
+	return undef if -l $item  and  $no_follow_symlinks;
+
 	if (-d $item) {
 		return if -z "$item/.rk.skip"  or  $no_recurse; # The first check could be done later but this makes skipping as fast as possible
-		return if -l $item  and  $no_follow_dir_symlinks;
 
 		my (%kids_quiet, %kids_skip);
 		$quiet = &marker_inherit($item, $quiet, '.rk.quiet', \%kids_quiet);
@@ -125,7 +125,6 @@ sub item_process {
 		return 1;
 	}
 
-	return undef if -l $item  and  $no_follow_file_symlinks;
 	return &file_process($item, $quiet) if -f $item;
 }
 
