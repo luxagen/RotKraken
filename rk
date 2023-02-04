@@ -97,9 +97,11 @@ sub item_process {
 
 	return undef if -l $item  and  $no_follow_symlinks;
 
-	return &file_process($item, $quiet) if -f $item;
+	stat($item);
 
-	return unless -d $item;
+	return &file_process($item, $quiet) if -f *_;
+
+	return undef unless -d *_;
 
 	return if -z "$item/.rk.skip"  or  $no_recurse; # The first check could be done later but this makes skipping as fast as possible
 
