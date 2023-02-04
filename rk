@@ -99,7 +99,7 @@ sub item_process {
 
 	stat($item);
 
-	return &file_process($item, $quiet) if -f *_;
+	return &file_process($item, $quiet, \*_) if -f *_;
 
 	return undef unless -d *_;
 
@@ -133,9 +133,9 @@ sub item_process {
 ################################################################################
 # Get a file's mtime as a DateTime
 sub file_mtime {
-	my ($file) = @_;
+	my ($file, $hStat) = @_; # The stat handle won't survive into the callee unless it's passed by ref
 
-	my @stat = (stat($file));
+	my @stat = (stat(${$hStat})); # I'm not sure why, but the outer parens are required
 
 	unless (scalar(@stat) > 9) {
 		warn "$file: cannot stat() mtime\n";
@@ -148,7 +148,7 @@ sub file_mtime {
 ################################################################################
 # This implements both initialisation and verification
 sub file_process {
-	my ($file, $quiet) = @_;
+	my ($file, $quiet, $hStat) = @_;
 
 	if ($mode_clear) {
 		foreach ('md5', 'htime', 'state', 'vtime') {
@@ -168,7 +168,7 @@ sub file_process {
 		return &print_status($quiet, $file, 'N', &hash_and_store($file)) if $mode_init;
 	}
 	elsif ($mode_update or $mode_verify) { # Extra outer guard for efficiency
-		my $mtime = &file_mtime($file);
+		my $mtime = &file_mtime($file, \$hStat); # The stat handle won't survive into the callee unless we pass by ref
 
 		return undef unless defined $mtime;
 
