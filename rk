@@ -219,18 +219,20 @@ sub filename_for_output {
 sub print_status {
 	my ($quiet, $file, $status, $hash) = @_;
 
+	return unless $mode_unquiet  or  not $quiet;
+
 	if ($mode_export) {
 		printf(
 			"%10u  %s  %s\n",
 			-s $file,
 			('!' ne $status)  ?  $hash // '????????????????????????????????'  :  '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-			&filename_for_output($file)) if   $mode_unquiet  or  not $quiet;
+			&filename_for_output($file));
 	}
 	else {
 		printf(
 			"%s %s\n",
 			$status,
-			&filename_for_output($file)) if   $mode_unquiet  or  not $quiet;
+			&filename_for_output($file));
 	}
 }
 
