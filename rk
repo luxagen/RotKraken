@@ -115,11 +115,9 @@ sub item_process {
 		return undef;
 	}
 
-	my @list = readdir($handle);
-
 	$item =~ s/\/$//; # Remove any trailing slash before concatenating
 
-	foreach my $nested (@list) {
+	foreach my $nested (readdir($handle)) {
 		next if $nested eq "."  or  $nested eq "..";
 		next if exists $kids_skip{$nested};
 		&item_process("$item/$nested", $quiet  ||  defined $kids_quiet{$nested});
