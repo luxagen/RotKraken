@@ -165,7 +165,7 @@ sub file_process {
 			&delfattr($file, "rk.$_");
 		}
 
-		return &print_status($quiet, $file, ' ', undef);
+		return &print_status($quiet, $file, '-', undef);
 	}
 
 	my $m = &meta_get($file);
@@ -184,7 +184,7 @@ sub file_process {
 
 		if ($mtime gt DateTime->now) {
 			++$errorCount;
-			return &print_status($quiet, $file, '!', $meta{md5}) if $mtime gt DateTime->now->iso8601;
+			return &print_status($quiet, $file, 'F', $meta{md5}) if $mtime gt DateTime->now->iso8601;
 		}
 
 		if ($mode_update) {
@@ -218,7 +218,7 @@ sub file_process {
 		}
 	}
 
-	return &print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : ' ') // '?', $meta{md5});
+	return &print_status($quiet, $file, (exists $meta{htime} ? $meta{state} : '-') // 'I', $meta{md5});
 }
 
 ################################################################################
@@ -237,7 +237,9 @@ sub print_status {
 		printf(
 			"%10u  %s  %s\n",
 			-s $file,
-			('!' ne $status)  ?  $hash // '????????????????????????????????'  :  '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
+			('F' ne $status  and  'S' ne $status)?
+				$hash // '--------------------------------'  :
+				"$status-------------------------------",
 			&filename_for_output($file));
 	}
 	else {
