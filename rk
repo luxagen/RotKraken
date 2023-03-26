@@ -17,6 +17,7 @@ my @options_spec = (
 	Switch(    '--quiet|-q')->doc('Suppress stdout logging'                      ),
 	Switch(  '--unquiet|-Q')->doc('Force stdout logging (ignore .rk.quiet files)'),
 	Switch(   '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'  ),
+	Switch(    '--local|-l')->doc('Log paths as local to each argument'          ),
 	Switch(     '--init|-i')->doc('Initialise files that are missing metadata'   ),
 	Switch(   '--update|-u')->doc('Update metadata for changed files'            ),
 	Switch(   '--verify|-v')->doc('Verify initialised files against metadata'    ),
@@ -35,6 +36,7 @@ STDERR->autoflush(1);
 
 my $mode_clear    = $options->get_clear    ;
 my $mode_export   = $options->get_export   ;
+my $mode_local    = $options->get_local    ;
 my $mode_init     = $options->get_init     ;
 my $mode_update   = $options->get_update   ;
 my $mode_verify   = $options->get_verify   ;
@@ -62,6 +64,14 @@ foreach my $item (@ARGV) {
 }
 
 foreach my $item (@ARGV) {
+	use File::chdir;
+	local $CWD;
+
+	if ($mode_local) {
+		$CWD = $item; # Scoped change-directory
+		$item = '.';
+	}
+
 	&item_process($item, $mode_quiet);
 }
 
@@ -120,7 +130,9 @@ sub item_process {
 	foreach my $nested (readdir($handle)) {
 		next if $nested eq "."  or  $nested eq "..";
 		next if exists $kids_skip{$nested};
-		&item_process("$item/$nested", $quiet  ||  defined $kids_quiet{$nested});
+
+		my $kidPath = ($item eq '.') ? $nested : "$item/$nested";
+		&item_process($kidPath, $quiet  ||  defined $kids_quiet{$nested});
 	}
 
 	closedir($handle);
