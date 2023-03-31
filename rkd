@@ -1,0 +1,279 @@
+#!/usr/bin/env perl
+
+use utf8;
+use strict;
+use warnings;
+
+#use DateTime qw(now);
+#use File::ExtAttr ':all';
+#use Digest::MD5;
+use Getopt::Lucid qw( :all );
+
+our $hEmpty = 'd41d8cd98f00b204e9800998ecf8427e';
+our $disable_reporting = 0;
+
+my @options_spec = (
+  List  ('--exclude|-x')->doc('Exclude paths containing a substring'),
+  Switch(   '--help|-h')->doc('Print usage (this)'                  ),
+);
+
+# read config in a way that means we can output usage info
+# https://github.com/dagolden/Getopt-Lucid/blob/e39a85a03d838020d53eb0490b4a567b550d398b/lib/Getopt/Lucid.pm#L1480-L1492
+my $options = Getopt::Lucid->getopt(\@options_spec, {strict => 1})->validate();
+
+usage() and exit(0) if $options->get_help;
+
+my @excludes = $options->get_exclude;
+
+print("Error: 2 paths not specified.\n\n") and usage() and exit(1) unless 1 == $#ARGV;
+
+our %hashes;
+our @path2hash;
+
+for (my $c = 0;$c <= $#ARGV;++$c)
+{
+	my $item = $ARGV[$c];
+
+  print "Path '$item' not found\n" and exit(2) unless -e $item;
+  print "Path '$item' is not a file or directory\n" and exit(3) unless -f _  or  -p _  or  -d _;
+
+	my $fh;
+
+	if (-d _)
+	{
+		open($fh, '-|', 'rke', $item);
+	}
+	else
+	{
+		# Open handle and pass to parse_log
+		open($fh, '<', $item);
+	}
+
+  &parse_log($fh, $c);
+}
+
+&diff_cpmv();
+#&diff_cz();
+&diff_remaining();
+
+exit 0;
+
+########################################################################################################################
+
+sub usage
+{
+  print "RotKraken Diff v0.5, copyright © 2023 Luxagen\n\n";
+
+  print $options->usage();
+
+  print <<EOF
+
+https://github.com/luxagen/RotKraken
+
+EOF
+}
+
+sub is_excluded
+{
+	my ($path) = @_;
+
+	foreach my $exclude (@excludes)
+	{
+		return 1 if index($path, $exclude) != -1;
+	}
+}
+
+sub parse_log
+{
+	my ($fh, $side) = @_;
+
+	my (%p2h, %h2p); # Per-side
+
+	while (<$fh>)
+	{
+		warn "Failed line: --$_--\n" unless /^ *(\d+) {2}([0-9a-f]{32}|\S\.{31}) {2}(?:\.\/)?(.+)$/;
+
+		my ($bytes, $hash, $path) = ($1, $2, $3);
+
+		if ($hash =~ /(.)\.{31}/)
+		{
+			warn "'$path': hash-invalid state '$1'\n";
+			next;
+		}
+
+		next if is_excluded($path);
+
+		my $pathInfo;
+
+		if ($side > 0)
+		{
+			my $lhs = $path2hash[0]->{$path};
+			if (defined $lhs  and  $lhs->{hash} eq $hash)
+			{
+				$pathInfo = $lhs;
+				$lhs->{done} = 1;
+			}
+		}
+
+		$p2h{$path}  =  defined $pathInfo ? $pathInfo : {hash => $hash, done => 0};
+
+		if (defined (my $old = $hashes{$hash}))
+		{
+			die unless $old->{bytes} == $bytes;
+			push @{$old->{paths}->[$side]}, $path; # TODO ref to path index
+		}
+		else
+		{
+			my $new =
+			{
+				bytes => $bytes,
+			};
+
+			$new->{paths}->[$side] = [$path]; # TODO ref to path index
+			$hashes{$hash} = $new;
+		}
+
+		push(@{$h2p{$hash}}, $path);
+	}
+
+	$path2hash[$side] = \%p2h;
+}
+
+sub report
+{
+	my ($hr, $str, @args) = @_;
+
+	return if $hr->{done};
+
+	printf $str, @args unless $disable_reporting;
+
+	$hr->{done} = 1;
+}
+
+sub diff_cz
+{
+	while (my ($path, $hr) = each(%{$path2hash[1]}))
+	{
+		next if $hEmpty ne $hr->{hash};
+		&report($hr, "%s\tCZ\n", $path);
+	}
+}
+
+sub pml
+{
+	my ($a, $b) = @_;
+
+	my $mask  =  $a ^ $b;
+
+	my $i = 0;
+	++$i while($i < length $mask  and  not ord substr($mask, $i, 1));
+
+	return $i;
+}
+
+sub match
+{
+	my ($rpList, $i, $rp) = @_;
+
+	die unless $$i >= 0  and  $$i <= scalar @$rpList;
+
+	my $limit = scalar @$rpList;
+
+	++$$i while ($$i < $limit  and  $rpList->[$$i]->[1] lt $$rp);
+
+	if ($$i == $limit)
+	{
+		die unless $$i > 0;
+		return $rpList->[-1];
+	}
+
+	if ($$i == 0)
+	{
+		die unless $$i < $limit;
+		return $rpList->[0];
+	}
+
+	my $pmlPrev = &pml(
+		$$rp,
+		$rpList->[$$i - 1]->[1]);
+
+	my $pmlNext = &pml(
+		$$rp,
+		$rpList->[$$i]->[1]);
+
+	return $rpList->[($pmlNext < $pmlPrev)  ?  $$i - 1  :  $$i];
+}
+
+sub diff_cpmv
+{
+  while (my ($hash, $iHash) = each(%hashes))
+	{
+		my @rpRHS = sort(
+			{$a->[1] cmp $b->[1]}
+			map(
+				{
+					my $hr = $path2hash[1]->{$_};
+					$hr->{done} ? () : [$hr, scalar reverse($_)]; # Exclude done paths
+				}
+				@{$iHash->{paths}->[1] // []}));
+
+		next unless scalar @rpRHS;
+
+		my @rpLHS = sort(
+			{$a->[1] cmp $b->[1]}
+			map(
+				[$path2hash[0]->{$_}, scalar reverse($_)],
+				@{$iHash->{paths}->[0] // []}));
+
+		next unless scalar @rpLHS;
+
+		my $iL=0;
+		foreach my $item (@rpRHS)
+		{
+			my $matchL = &match(\@rpLHS, \$iL, \$item->[1]);
+
+			my $hrL = $matchL->[0];
+
+			printf
+				"%s\t%s\t%s\n",
+				scalar reverse($matchL->[1]),
+				$hrL->{done} ? 'CP' : 'MV',
+				scalar reverse($item->[1])
+				unless $disable_reporting;
+
+				$item->[0]->{done} = $hrL->{done} = 1;
+		}
+
+		# diff_remaining will deal with any unmatched paths on either side
+	}
+}
+
+sub diff_remaining
+{
+	my $pathsR = $path2hash[1];
+
+	while (my ($path, $hrL) = each(%{$path2hash[0]}))
+	{
+		next if $hrL->{done};
+
+		my $hrR = $pathsR->{$path};
+
+		unless (defined $hrR and not $hrR->{done})
+		{
+			&report($hrL, "%s\tRM\n", $path);
+			next;
+		}
+
+		die if $hrL->{hash} eq $hrR->{hash};
+
+		&report($hrL, "%s\tMD\n", $path);
+		$hrR->{done} = 1;
+
+		next;
+	}
+
+	while (my ($path, $hrR) = each(%{$pathsR}))
+	{
+		&report($hrR, "%s\tCR\n", $path);
+	}
+}
