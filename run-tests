@@ -1,4 +1,4 @@
 #!/bin/bash
 mkdir test-run
-./tests test-run
+perl -MCarp::Always ./tests test-run
 rm -rf test-run
