@@ -300,8 +300,6 @@ sub hash_content {
 sub meta_get() {
 	my ($file) = @_;
 
-	my $out;
-
 	unless (-r $file) {
 		warn "$file: not readable\n";
 		return undef;
