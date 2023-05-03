@@ -409,7 +409,12 @@ sub file_mtime {
 
 sub invoke {
 	my ($result, $mode, @files) = (@_);
-	die unless run3 [ $testee, "-$mode", @files ], undef, \my $out, undef;
+
+	my @args = ($testee, "-$mode", @files);
+
+	splice(@args, 1, 1) if $args[1] eq '-';
+
+	die unless run3 \@args, undef, \my $out, undef;
 	die unless $? == $result<<8;
 	return $out;
 }
