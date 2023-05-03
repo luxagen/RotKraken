@@ -101,6 +101,30 @@ EOF
 }
 
 ################################################################################
+# Produce sanitised path for filesystem child
+sub sanitised_kid_path
+{
+	my ($dir, $kid) = @_;
+
+	my $len=length($dir);
+
+	if ('.' eq substr($dir, 0, 1))
+	{
+		return $kid if 1==$len;
+
+		if ('/' eq substr($dir, 1, 1))
+		{
+			return $kid if 2==$len;
+
+			my $stripped = substr($dir, 2);
+			return "$stripped/$kid";
+		}
+	}
+
+	return "$dir/$kid";
+}
+
+################################################################################
 # Process a filesystem item
 sub item_process {
 	my ($item, $quiet) = @_;
@@ -131,7 +155,8 @@ sub item_process {
 		next if $kid eq "."  or  $kid eq "..";
 		next if exists $kids_skip{$kid};
 
-		my $kidPath = ($item eq '.') ? $kid : "$item/$kid";
+		my $kidPath = &sanitised_kid_path($item, $kid);
+
 		&item_process($kidPath, $quiet  ||  defined $kids_quiet{$kid});
 	}
 
