@@ -13,16 +13,16 @@ our $BLK = 1048576; # Block size for hashing loop
 our $errorCount = 0;
 
 my @options_spec = (
-	Switch(    '--clear|-x')->doc('Clear metadata from extended attributes'      ),
-	Switch(    '--quiet|-q')->doc('Suppress stdout logging'                      ),
-	Switch(  '--unquiet|-Q')->doc('Force stdout logging (ignore .rk.quiet files)'),
-	Switch(   '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'  ),
-	Switch(    '--local|-l')->doc('Log paths as local to each argument'          ),
-	Switch(     '--init|-i')->doc('Initialise files that are missing metadata'   ),
-	Switch(   '--update|-u')->doc('Update metadata for changed files'            ),
-	Switch(   '--verify|-v')->doc('Verify initialised files against metadata'    ),
-	Switch('--verify-ro|-V')->doc('As --verify, but don\'t update metadata'      ),
-	Switch(     '--help|-h')->doc('Print usage (this)'                           ),
+	Switch(       '--clear|-x')->doc('Clear metadata from extended attributes'      ),
+	Switch(       '--quiet|-q')->doc('Suppress stdout logging'                      ),
+	Switch(     '--unquiet|-Q')->doc('Force stdout logging (ignore .rk.quiet files)'),
+	Switch(      '--export|-e')->doc('Log files to stdout in `md5deep -zl` format'  ),
+	Switch(    '--relative|-r')->doc('Log paths relative to each tree argument'     ),
+	Switch(        '--init|-i')->doc('Initialise files that are missing metadata'   ),
+	Switch(      '--update|-u')->doc('Update metadata for changed files'            ),
+	Switch(      '--verify|-v')->doc('Verify initialised files against metadata'    ),
+	Switch(   '--verify-ro|-V')->doc('As --verify, but don\'t update metadata'      ),
+	Switch(        '--help|-h')->doc('Print usage (this)'                           ),
 );
 
 # read config in a way that means we can output usage info
@@ -34,15 +34,15 @@ usage() and exit(0) if $options->get_help;
 STDOUT->autoflush(1);
 STDERR->autoflush(1);
 
-my $mode_clear    = $options->get_clear    ;
-my $mode_export   = $options->get_export   ;
-my $mode_local    = $options->get_local    ;
-my $mode_init     = $options->get_init     ;
-my $mode_update   = $options->get_update   ;
-my $mode_verify   = $options->get_verify   ;
-my $mode_ro       = $options->get_verify_ro;
-my $mode_quiet    = $options->get_quiet    ;
-our $mode_unquiet = $options->get_unquiet  ;
+my $mode_clear       = $options->get_clear    ;
+my $mode_export      = $options->get_export   ;
+my $mode_relative    = $options->get_relative ;
+my $mode_init        = $options->get_init     ;
+my $mode_update      = $options->get_update   ;
+my $mode_verify      = $options->get_verify   ;
+my $mode_ro          = $options->get_verify_ro;
+my $mode_quiet       = $options->get_quiet    ;
+our $mode_unquiet    = $options->get_unquiet  ;
 
 my $no_recurse = 0;
 my $no_follow_symlinks = 1;
@@ -67,7 +67,7 @@ foreach my $item (@ARGV) {
 	use File::chdir;
 	local $CWD;
 
-	if ($mode_local) {
+	if ($mode_relative) {
 		$CWD = $item; # Scoped change-directory
 		$item = '.';
 	}
