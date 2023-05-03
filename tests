@@ -288,14 +288,14 @@ sub test_recurse() {
 	&write_file("$base/dir1/dir3/$f3", $v3);
 
 	my @expected = sort(
-		"N $base/dir1/dir2/$p1",
-		"N $base/dir1/dir3/$p1",
-		"N $base/dir1/$p1"     ,
-		"N $base/dir1/dir2/$p2",
-		"N $base/dir1/dir3/$p3");
+		"- $base/dir1/dir2/$p1",
+		"- $base/dir1/dir3/$p1",
+		"- $base/dir1/$p1"     ,
+		"- $base/dir1/dir2/$p2",
+		"- $base/dir1/dir3/$p3");
 
 	my @got = sort(
-		split(/\n/, &invoke(0, 'i', "$base/dir1")));
+		split(/\n/, &invoke(0, '', "$base/dir1")));
 
 	&is_deeply(\@got,\@expected);
 
