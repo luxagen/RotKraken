@@ -35,13 +35,13 @@ my $p3 = "horrible3-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
 # Testing program
 
 foreach my $base (@ARGV) {
-	&test_nx ($base);
-	&test_nv ($base);
-	&test_ivu($base);
-	&test_e  ($base);
-	&test_l  ($base);
-	&test_r  ($base);
-	&test_fut($base);
+	&test_nx     ($base);
+	&test_nv     ($base);
+	&test_ivu    ($base);
+	&test_e      ($base);
+	&test_symlink($base);
+	&test_recurse($base);
+	&test_future ($base);
 }
 
 exit 0;
@@ -240,7 +240,7 @@ sub test_e {
 	unlink "$base/$f1";
 }
 
-sub test_l {
+sub test_symlink {
 	my ($base) = @_;
 	my %meta;
 
@@ -273,7 +273,7 @@ sub test_l {
 	unlink "$base/$f1","$base/$f2";
 }
 
-sub test_r() {
+sub test_recurse() {
 	my ($base) = @_;
 	my %meta;
 
@@ -300,7 +300,7 @@ sub test_r() {
 	rmtree "$base/dir1";
 }
 
-sub test_fut {
+sub test_future {
 	my ($base) = @_;
 	my %meta;
 
