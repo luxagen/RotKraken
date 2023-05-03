@@ -127,12 +127,12 @@ sub item_process {
 
 	$item =~ s/\/$//; # Remove any trailing slash before concatenating
 
-	foreach my $nested (readdir($handle)) {
-		next if $nested eq "."  or  $nested eq "..";
-		next if exists $kids_skip{$nested};
+	foreach my $kid (readdir($handle)) {
+		next if $kid eq "."  or  $kid eq "..";
+		next if exists $kids_skip{$kid};
 
-		my $kidPath = ($item eq '.') ? $nested : "$item/$nested";
-		&item_process($kidPath, $quiet  ||  defined $kids_quiet{$nested});
+		my $kidPath = ($item eq '.') ? $kid : "$item/$kid";
+		&item_process($kidPath, $quiet  ||  defined $kids_quiet{$kid});
 	}
 
 	closedir($handle);
