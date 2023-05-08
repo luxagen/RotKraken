@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+no warnings qw(newline);
 
 use File::ExtAttr ':all';
 use Test::More qw(no_plan); # for the is() and isnt() functions
@@ -22,14 +23,16 @@ my $h2 = '437bba8e0bf58337674f4539e75186ac';
 my $h3 = '781e5e245d69b566979b86e28d23f2c7';
 
 # Test filenames
-my $f1 = "horrible1-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
-my $f2 = "horrible2-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
-my $f3 = "horrible3-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
+my $fn_suffix = "-\\\'\"\`\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
+my $f1 = "1$fn_suffix";
+my $f2 = "2$fn_suffix";
+my $f3 = "3$fn_suffix";
 
 # Printed versions of the above from stdout
-my $p1 = "horrible1-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
-my $p2 = "horrible2-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
-my $p3 = "horrible3-\\\'\"\`\\n\$\@-#~:;<>!%&|*?()+=[]{}.testfile\r";
+$fn_suffix =~ s/\n/\\n/g; # Escape newline
+my $p1 = "1$fn_suffix";
+my $p2 = "2$fn_suffix";
+my $p3 = "3$fn_suffix";
 
 ################################################################################
 # Testing program
