@@ -45,6 +45,7 @@ foreach my $base (@ARGV) {
 	&test_symlink($base);
 	&test_recrel ($base);
 	&test_future ($base);
+	&test_qs     ($base);
 }
 
 exit 0;
@@ -383,6 +384,105 @@ sub test_future {
 	&is(scalar keys %meta, 0);
 
 	unlink "$base/$f1";
+}
+
+sub test_qs {
+	my ($base) = @_;
+
+	# Control, all quiet, all skip, one quiet, one skip
+	my @paths = ("$base/C", "$base/Q", "$base/S", "$base/q", "$base/s");
+	my ($f1, $f2) = ("a", "b");
+
+	##################################
+	# Create dirs+files with metafiles
+
+	foreach my $path (@paths)
+	{
+		make_path($path);
+		&write_file("$path/$f1", $v1);
+		&write_file("$path/$f2", $v2);
+	}
+
+	&write_file("$paths[1]/.rk.quiet", '');
+	&write_file("$paths[2]/.rk.skip" , '');
+	&write_file("$paths[3]/.rk.quiet", "$f1");
+	&write_file("$paths[4]/.rk.skip" , "$f1");
+
+	########################
+	# Verify what was logged
+
+	my @expected_log = sort(
+		"N $base/q/.rk.quiet",
+		"N $base/s/.rk.skip",
+		"N $base/C/a",
+		"N $base/C/b",
+		"N $base/q/$f2",
+		"N $base/s/$f2");
+
+	&is_deeply(
+		[sort(split(/\n/, &invoke(0, 'i', "./$base")))],
+		\@expected_log);
+
+	#########################
+	# Verify what was touched
+
+	my %md_count;
+	foreach my $path (@paths)
+	{
+		foreach my $name ($f1, $f2)
+		{
+			my $file = "$path/$name";
+			$md_count{$file}  =  scalar %{meta_get($file)};
+		}
+	}
+
+	my %expected_mdc=
+	(
+		"$base/C/a" => 2,
+		"$base/C/b" => 2,
+		"$base/Q/a" => 2,
+		"$base/Q/b" => 2,
+		"$base/S/a" => 0,
+		"$base/S/b" => 0,
+		"$base/q/a" => 2,
+		"$base/q/b" => 2,
+		"$base/s/a" => 0,
+		"$base/s/b" => 2,
+	);
+
+	&is_deeply(\%md_count, \%expected_mdc);
+
+	####################################
+	# Verify quiet and unquiet overrides
+
+	&is(&invoke(0, 'q', "./$base"), ''); # Quiet override: no output!
+
+	# Unquiet override: everything except skipped output
+	@expected_log = sort(
+		"I $base/Q/.rk.quiet",
+		"I $base/q/.rk.quiet",
+		"I $base/s/.rk.skip",
+		"I $base/C/a",
+		"I $base/C/b",
+		"I $base/Q/a",
+		"I $base/Q/b",
+		"I $base/q/a",
+		"I $base/q/b",
+		"I $base/s/b");
+
+	&is_deeply(
+		[sort(split(/\n/, &invoke(0, 'Q', "./$base")))],
+		\@expected_log);
+
+	#########
+	# Tidy up
+
+	remove_tree(
+		@paths,
+		{
+			verbose => 0,
+			safe => 1,
+		});
 }
 
 ################################################################################
