@@ -7,7 +7,7 @@ no warnings qw(newline);
 use File::ExtAttr ':all';
 use Test::More qw(no_plan); # for the is() and isnt() functions
 use IPC::Run3 qw(run3);
-use File::Path qw(make_path rmtree);
+use File::Path qw(make_path remove_tree);
 use FindBin;
 my $testee = "$FindBin::Bin/rk";
 
@@ -300,7 +300,12 @@ sub test_recurse() {
 
 	&is_deeply(\@got,\@expected);
 
-	rmtree "$base/dir1";
+	remove_tree(
+		"$base/dir1",
+		{
+			verbose => 0,
+			safe => 1,
+		});
 }
 
 sub test_future {
