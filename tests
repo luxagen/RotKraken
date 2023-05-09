@@ -278,7 +278,6 @@ sub test_symlink {
 
 sub test_recurse() {
 	my ($base) = @_;
-	my %meta;
 
 	make_path("$base/dir1/dir2","$base/dir1/dir3");
 
